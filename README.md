@@ -14,7 +14,7 @@ A Chrome extension to instantly find, mute, and close tabs playing audio.
 
 ### Chrome Web Store
 
-Coming soon.
+[Install from Chrome Web Store](https://chromewebstore.google.com/detail/audio-tab-finder-%E2%80%93-find-m/ecnkofmcbijompohhddkaaekdaenhmhh)
 
 ### Manual Installation
 
