@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Tab Finder - Find the noisy tab instantly</title>
+  <meta name="description" content="Stop hunting through tabs for that mystery sound. Audio Tab Finder shows you exactly which tabs are playing audio.">
+  <meta name="keywords" content="chrome extension, audio tabs, find sound, tab manager, browser extension, productivity">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Audio Tab Finder">
+  <meta property="og:description" content="Find which tab is playing that mystery sound. One click. No hunting.">
+  <meta property="og:type" content="website">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #fff;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 60px 0;
+    }
+
+    .hero-icon {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 30px;
+      filter: drop-shadow(0 10px 30px rgba(74, 222, 128, 0.3));
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      background: linear-gradient(90deg, #fff, #4ade80);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-tagline {
+      font-size: 1.5rem;
+      color: #94a3b8;
+      margin-bottom: 30px;
+      font-weight: 300;
+    }
+
+    .hero-quote {
+      font-size: 2rem;
+      font-style: italic;
+      color: #f87171;
+      margin-bottom: 40px;
+    }
+
+    /* CTA Button */
+    .cta-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(90deg, #4ade80, #22c55e);
+      color: #000;
+      padding: 16px 32px;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
+    }
+
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(74, 222, 128, 0.5);
+    }
+
+    .cta-button svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* Story Section */
+    .story {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 40px;
+      margin: 60px 0;
+    }
+
+    .story p {
+      font-size: 1.1rem;
+      color: #cbd5e1;
+      margin-bottom: 20px;
+    }
+
+    .story p:last-child {
+      margin-bottom: 0;
+    }
+
+    .story strong {
+      color: #4ade80;
+    }
+
+    .story em {
+      color: #fbbf24;
+    }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      margin: 60px 0;
+    }
+
+    .feature {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .feature:hover {
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+    }
+
+    .feature h3 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    .feature p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    /* Perfect For */
+    .perfect-for {
+      text-align: center;
+      margin: 60px 0;
+    }
+
+    .perfect-for h2 {
+      font-size: 2rem;
+      margin-bottom: 30px;
+    }
+
+    .personas {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .persona {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 0.95rem;
+      color: #e2e8f0;
+    }
+
+    /* Privacy */
+    .privacy {
+      text-align: center;
+      margin: 60px 0;
+      padding: 40px;
+      background: rgba(74, 222, 128, 0.1);
+      border-radius: 20px;
+      border: 1px solid rgba(74, 222, 128, 0.2);
+    }
+
+    .privacy h2 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      color: #4ade80;
+    }
+
+    .privacy p {
+      color: #94a3b8;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 40px 0;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .footer a {
+      color: #4ade80;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Demo Animation */
+    .demo {
+      margin: 40px 0;
+      text-align: center;
+    }
+
+    .demo-window {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 16px;
+      display: inline-block;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .demo-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .demo-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .demo-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .demo-tab {
+      display: flex;
+      align-items: center;
+      background: #16213e;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+
+    .demo-tab:last-child {
+      margin-bottom: 0;
+    }
+
+    .demo-favicon {
+      width: 20px;
+      height: 20px;
+      background: #e74c3c;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+
+    .demo-favicon.yt { background: #ff0000; }
+    .demo-favicon.spotify { background: #1db954; }
+
+    .demo-tab-info {
+      flex: 1;
+    }
+
+    .demo-tab-title {
+      font-size: 13px;
+      color: #fff;
+    }
+
+    .demo-tab-url {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .demo-close {
+      width: 24px;
+      height: 24px;
+      background: transparent;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <img src="icons/icon128.png" alt="Audio Tab Finder" class="hero-icon">
+      <h1>Audio Tab Finder</h1>
+      <p class="hero-tagline">Find the noisy tab. Instantly.</p>
+      <p class="hero-quote">"WHERE IS THAT SOUND COMING FROM?!"</p>
+
+      <a href="#" class="cta-button">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm-1.5 17.5l-5-5 1.41-1.41L10.5 14.67l6.59-6.59L18.5 9.5l-8 8z"/>
+        </svg>
+        Add to Chrome - It's Free
+      </a>
+    </section>
+
+    <!-- Demo -->
+    <section class="demo">
+      <div class="demo-window">
+        <div class="demo-header">
+          <div class="demo-dot"></div>
+          <span class="demo-title">Audio Tabs</span>
+        </div>
+        <div class="demo-tab">
+          <div class="demo-favicon yt"></div>
+          <div class="demo-tab-info">
+            <div class="demo-tab-title">Lofi Girl - beats to relax/study to</div>
+            <div class="demo-tab-url">youtube.com</div>
+          </div>
+          <div class="demo-close">x</div>
+        </div>
+        <div class="demo-tab">
+          <div class="demo-favicon spotify"></div>
+          <div class="demo-tab-info">
+            <div class="demo-tab-title">Discover Weekly - Spotify</div>
+            <div class="demo-tab-url">open.spotify.com</div>
+          </div>
+          <div class="demo-close">x</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Story -->
+    <section class="story">
+      <p>We've all been there. You're deep in focus mode, conquering your to-do list like a productivity ninja, when suddenly... <em>music starts playing</em>. Or worse, an ad. From somewhere. One of your 47 open tabs has betrayed you.</p>
+      <p>You start the ancient ritual: clicking through tabs one by one, desperately hunting for the audio culprit. By the time you find it, you've lost your train of thought, your coffee is cold, and your zen is completely destroyed.</p>
+      <p><strong>Not anymore.</strong></p>
+      <p>Audio Tab Finder is your new best friend. One click shows you EXACTLY which tabs are making noise. No more tab-hunting. No more frustration. Just sweet, sweet silence (or music, if that's what you wanted).</p>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+      <div class="feature">
+        <div class="feature-icon">1</div>
+        <h3>See All Audio Tabs</h3>
+        <p>A clean list showing every tab currently playing sound. No hunting required.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">2</div>
+        <h3>Jump Instantly</h3>
+        <p>Click any tab to switch to it immediately. One click, done.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">x</div>
+        <h3>Close From List</h3>
+        <p>Hit the X button to close noisy tabs without even visiting them.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">#</div>
+        <h3>Badge Counter</h3>
+        <p>See how many tabs are playing audio right on the extension icon.</p>
+      </div>
+    </section>
+
+    <!-- Perfect For -->
+    <section class="perfect-for">
+      <h2>Perfect For</h2>
+      <div class="personas">
+        <span class="persona">Tab hoarders (100+ tabs? No judgment)</span>
+        <span class="persona">Remote workers on video calls</span>
+        <span class="persona">Music lovers with multiple playlists</span>
+        <span class="persona">Anyone who hates autoplay ads</span>
+        <span class="persona">Focus mode enthusiasts</span>
+      </div>
+    </section>
+
+    <!-- Privacy -->
+    <section class="privacy">
+      <h2>Privacy First. Always.</h2>
+      <p>We only check if tabs have audio. That's it. No data collection, no tracking, no analytics. Your browsing is your business.</p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Made with frustration and determination by someone who had way too many tabs open.</p>
+      <p style="margin-top: 10px;">
+        <a href="https://github.com/FrancisGregori" target="_blank">GitHub</a> &middot;
+      </p>
+    </footer>
+  </div>
+</body>
+</html>
