@@ -1,0 +1,50 @@
+{
+  "extensionName": {
+    "message": "Audio Tab Finder – Encontre, Silencie e Feche Abas com Som",
+    "description": "The name of the extension"
+  },
+  "extensionShortName": {
+    "message": "Audio Tab Finder",
+    "description": "Short name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Encontre instantaneamente qual aba esta tocando som. Pule para ela, silencie ou feche com um clique. Chega de procurar abas barulhentas.",
+    "description": "Description of the extension"
+  },
+  "popupTitle": {
+    "message": "Abas com Audio",
+    "description": "Title shown in the popup"
+  },
+  "emptyStateMessage": {
+    "message": "Nenhuma aba tocando audio",
+    "description": "Message shown when no tabs are playing audio"
+  },
+  "muteTab": {
+    "message": "Silenciar aba",
+    "description": "Tooltip for mute button"
+  },
+  "unmuteTab": {
+    "message": "Ativar som da aba",
+    "description": "Tooltip for unmute button"
+  },
+  "closeTab": {
+    "message": "Fechar aba",
+    "description": "Tooltip for close button"
+  },
+  "switchToTab": {
+    "message": "Ir para aba",
+    "description": "Tooltip for clicking on a tab item"
+  },
+  "untitled": {
+    "message": "Sem titulo",
+    "description": "Fallback title for tabs without a title"
+  },
+  "audioPlaying": {
+    "message": "Audio tocando",
+    "description": "Screen reader text for audio indicator"
+  },
+  "audioMuted": {
+    "message": "Audio silenciado",
+    "description": "Screen reader text for muted audio indicator"
+  }
+}

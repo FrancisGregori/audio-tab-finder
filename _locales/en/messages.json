@@ -1,0 +1,50 @@
+{
+  "extensionName": {
+    "message": "Audio Tab Finder – Find, Mute & Close Noisy Tabs",
+    "description": "The name of the extension"
+  },
+  "extensionShortName": {
+    "message": "Audio Tab Finder",
+    "description": "Short name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Instantly find which tab is playing sound. Jump to it, mute it, or close it in one click. No more hunting for noisy tabs.",
+    "description": "Description of the extension"
+  },
+  "popupTitle": {
+    "message": "Audio Tabs",
+    "description": "Title shown in the popup"
+  },
+  "emptyStateMessage": {
+    "message": "No tabs playing audio",
+    "description": "Message shown when no tabs are playing audio"
+  },
+  "muteTab": {
+    "message": "Mute tab",
+    "description": "Tooltip for mute button"
+  },
+  "unmuteTab": {
+    "message": "Unmute tab",
+    "description": "Tooltip for unmute button"
+  },
+  "closeTab": {
+    "message": "Close tab",
+    "description": "Tooltip for close button"
+  },
+  "switchToTab": {
+    "message": "Switch to tab",
+    "description": "Tooltip for clicking on a tab item"
+  },
+  "untitled": {
+    "message": "Untitled",
+    "description": "Fallback title for tabs without a title"
+  },
+  "audioPlaying": {
+    "message": "Audio playing",
+    "description": "Screen reader text for audio indicator"
+  },
+  "audioMuted": {
+    "message": "Audio muted",
+    "description": "Screen reader text for muted audio indicator"
+  }
+}
