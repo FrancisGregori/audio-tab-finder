@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Tab Finder</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container" role="main" aria-label="Audio Tab Finder">
+    <h1 id="popup-title"></h1>
+    <div id="tabs-list" role="list" aria-label="Tabs playing audio"></div>
+    <div id="empty-state" class="empty-state hidden" role="status" aria-live="polite">
+      <p id="empty-message"></p>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

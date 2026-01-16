@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extensionName__",
+  "short_name": "__MSG_extensionShortName__",
+  "version": "1.0.3",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
+  "homepage_url": "https://github.com/FrancisGregori/audio-tab-finder",
+  "offline_enabled": true,
+  "permissions": ["tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "theme_icons": [
+      {
+        "light": "icons/light/icon16.png",
+        "dark": "icons/dark/icon16.png",
+        "size": 16
+      },
+      {
+        "light": "icons/light/icon48.png",
+        "dark": "icons/dark/icon48.png",
+        "size": 48
+      },
+      {
+        "light": "icons/light/icon128.png",
+        "dark": "icons/dark/icon128.png",
+        "size": 128
+      }
+    ],
+    "default_title": "Audio Tab Finder"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
