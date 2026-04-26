@@ -101,3 +101,17 @@ func TestWriteJSON_EncodesAndFrames(t *testing.T) {
 		t.Errorf("got %q want %q", got, `{"type":"hello"}`)
 	}
 }
+
+func TestWriteThenRead_ZeroLengthPayload(t *testing.T) {
+	var buf bytes.Buffer
+	if err := Write(&buf, []byte{}); err != nil {
+		t.Fatalf("Write zero-length failed: %v", err)
+	}
+	got, err := Read(&buf)
+	if err != nil {
+		t.Fatalf("Read zero-length failed: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("expected empty slice, got %d bytes", len(got))
+	}
+}
