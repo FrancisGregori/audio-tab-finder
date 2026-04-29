@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -40,6 +41,7 @@ func (l Level) String() string {
 type Logger struct {
 	out   io.Writer
 	level Level
+	mu    sync.RWMutex
 	inner *log.Logger
 }
 
@@ -62,11 +64,16 @@ func New(logDir string) (*Logger, error) {
 }
 
 func (l *Logger) SetLevel(lvl Level) {
+	l.mu.Lock()
 	l.level = lvl
+	l.mu.Unlock()
 }
 
 func (l *Logger) log(lvl Level, args ...any) {
-	if lvl < l.level {
+	l.mu.RLock()
+	skip := lvl < l.level
+	l.mu.RUnlock()
+	if skip {
 		return
 	}
 	prefix := fmt.Sprintf("%s [%s] ", time.Now().Format(time.RFC3339), lvl)
