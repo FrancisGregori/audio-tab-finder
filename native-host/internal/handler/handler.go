@@ -26,6 +26,7 @@ type Handler struct {
 	logger      *logging.Logger
 	watcher     *watcher.Watcher
 	mu          sync.Mutex
+	outMu       sync.Mutex
 }
 
 func New(storeDir string, out io.Writer, logger *logging.Logger) *Handler {
@@ -34,6 +35,12 @@ func New(storeDir string, out io.Writer, logger *logging.Logger) *Handler {
 		out:      out,
 		logger:   logger,
 	}
+}
+
+func (h *Handler) writeJSON(v any) error {
+	h.outMu.Lock()
+	defer h.outMu.Unlock()
+	return nmproto.WriteJSON(h.out, v)
 }
 
 func (h *Handler) Close() {
@@ -79,7 +86,7 @@ func (h *Handler) handleHello(raw []byte) error {
 	if err := h.startWatcher(); err != nil {
 		return h.replyError(msg.RequestId, "WATCHER_FAIL", err.Error())
 	}
-	return nmproto.WriteJSON(h.out, nmproto.HelloAck{
+	return h.writeJSON(nmproto.HelloAck{
 		Type: "hello_ack", RequestId: msg.RequestId, HostVersion: HostVersion,
 	})
 }
@@ -101,7 +108,7 @@ func (h *Handler) startWatcher() error {
 }
 
 func (h *Handler) onActionPushed(a store.Action) {
-	_ = nmproto.WriteJSON(h.out, nmproto.ActionRequest{
+	_ = h.writeJSON(nmproto.ActionRequest{
 		Type:              "action_request",
 		ActionId:          a.ActionId,
 		SourceProfileUuid: a.SourceProfileUuid,
@@ -132,7 +139,7 @@ func (h *Handler) handleUpdateState(raw []byte) error {
 	if err := store.WriteState(h.storeDir, p); err != nil {
 		return h.replyError(msg.RequestId, "WRITE_FAILED", err.Error())
 	}
-	return nmproto.WriteJSON(h.out, nmproto.UpdateStateAck{
+	return h.writeJSON(nmproto.UpdateStateAck{
 		Type: "update_state_ack", RequestId: msg.RequestId,
 	})
 }
@@ -142,6 +149,9 @@ func (h *Handler) handleGetAggregate(raw []byte) error {
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		return h.replyError("", "BAD_JSON", err.Error())
 	}
+	h.mu.Lock()
+	selfUuid := h.profileUuid
+	h.mu.Unlock()
 	profiles, err := store.ReadAllStates(h.storeDir)
 	if err != nil {
 		return h.replyError(msg.RequestId, "READ_FAILED", err.Error())
@@ -151,11 +161,11 @@ func (h *Handler) handleGetAggregate(raw []byte) error {
 		out = append(out, nmproto.AggregateProfile{
 			ProfileUuid: p.ProfileUuid,
 			Label:       p.Label,
-			IsSelf:      p.ProfileUuid == h.profileUuid,
+			IsSelf:      p.ProfileUuid == selfUuid,
 			Tabs:        p.Tabs,
 		})
 	}
-	return nmproto.WriteJSON(h.out, nmproto.Aggregate{
+	return h.writeJSON(nmproto.Aggregate{
 		Type: "aggregate", RequestId: msg.RequestId, Profiles: out,
 	})
 }
@@ -165,13 +175,16 @@ func (h *Handler) handleSendAction(raw []byte) error {
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		return h.replyError("", "BAD_JSON", err.Error())
 	}
-	if msg.TargetProfileUuid == h.profileUuid {
+	h.mu.Lock()
+	selfUuid := h.profileUuid
+	h.mu.Unlock()
+	if msg.TargetProfileUuid == selfUuid {
 		return h.replyError(msg.RequestId, "SELF_TARGET", "cannot target self")
 	}
 	a := store.Action{
 		SchemaVersion:     1,
 		ActionId:          uuid.NewString(),
-		SourceProfileUuid: h.profileUuid,
+		SourceProfileUuid: selfUuid,
 		TargetProfileUuid: msg.TargetProfileUuid,
 		Action:            msg.Action,
 		TargetTabId:       msg.TargetTabId,
@@ -182,7 +195,7 @@ func (h *Handler) handleSendAction(raw []byte) error {
 	if err := store.WriteAction(h.storeDir, a); err != nil {
 		return h.replyError(msg.RequestId, "WRITE_FAILED", err.Error())
 	}
-	return nmproto.WriteJSON(h.out, nmproto.SendActionAck{
+	return h.writeJSON(nmproto.SendActionAck{
 		Type: "send_action_ack", RequestId: msg.RequestId, ActionId: a.ActionId,
 	})
 }
@@ -197,7 +210,7 @@ func (h *Handler) handleActionResult(raw []byte) error {
 }
 
 func (h *Handler) replyError(requestId, code, message string) error {
-	return nmproto.WriteJSON(h.out, nmproto.ErrorMsg{
+	return h.writeJSON(nmproto.ErrorMsg{
 		Type: "error", RequestId: requestId, Code: code, Message: message,
 	})
 }
