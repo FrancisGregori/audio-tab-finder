@@ -13,3 +13,6 @@ Thumbs.db
 
 # Claude Code
 .claude/
+
+# Phase 2 — local build artifacts
+dist/

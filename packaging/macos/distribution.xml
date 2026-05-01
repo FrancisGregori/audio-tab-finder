@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Audio Tab Finder Native Helper</title>
+    <organization>com.fgregori</organization>
+    <readme file="README.txt" mime-type="text/plain"/>
+    <options customize="never" require-scripts="false" hostArchitectures="x86_64,arm64"/>
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="11.0"/>
+        </allowed-os-versions>
+    </volume-check>
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.fgregori.audio_tab_finder"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="com.fgregori.audio_tab_finder" visible="false">
+        <pkg-ref id="com.fgregori.audio_tab_finder"/>
+    </choice>
+    <pkg-ref id="com.fgregori.audio_tab_finder" version="0" onConclusion="none">audio-tab-finder-host-component.pkg</pkg-ref>
+</installer-gui-script>
