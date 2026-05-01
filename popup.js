@@ -50,14 +50,7 @@ function renderProfileHeader(profiles) {
   const own = getOwnProfile(profiles);
   const label = (own && own.label) || '';
 
-  const icon = document.createElement('span');
-  icon.className = 'profile-header__icon';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.innerHTML = `
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-    </svg>
-  `;
+  const icon = makeProfileHeaderIcon();
 
   const text = document.createElement('span');
   text.className = 'profile-header__text';
@@ -70,6 +63,13 @@ function renderProfileHeader(profiles) {
     text.textContent = chrome.i18n.getMessage('profileLabelEmpty');
     text.classList.add('profile-header__text--empty');
   }
+  text.addEventListener('click', () => enterLabelEditMode(label));
+  text.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      enterLabelEditMode(label);
+    }
+  });
 
   const suffix = document.createElement('span');
   suffix.className = 'profile-header__suffix';
@@ -85,11 +85,86 @@ function renderProfileHeader(profiles) {
       <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
     </svg>
   `;
+  editBtn.addEventListener('click', () => enterLabelEditMode(label));
 
   header.appendChild(icon);
   header.appendChild(text);
   header.appendChild(suffix);
   header.appendChild(editBtn);
+}
+
+function makeProfileHeaderIcon() {
+  const icon = document.createElement('span');
+  icon.className = 'profile-header__icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = `
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+    </svg>
+  `;
+  return icon;
+}
+
+function enterLabelEditMode(currentLabel) {
+  const header = document.getElementById('profile-header');
+  header.innerHTML = '';
+
+  const icon = makeProfileHeaderIcon();
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'profile-header__input';
+  input.maxLength = 30;
+  input.value = currentLabel || '';
+  input.setAttribute('aria-label', chrome.i18n.getMessage('profileLabelInputAria'));
+
+  let committed = false;
+
+  const commit = async () => {
+    if (committed) return;
+    committed = true;
+    await chrome.runtime.sendMessage({ type: 'update_label', label: input.value });
+    await loadAndRender();
+  };
+
+  const cancel = () => {
+    if (committed) return;
+    committed = true;
+    loadAndRender();
+  };
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!header.contains(document.activeElement)) cancel();
+    }, 0);
+  });
+
+  const saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'profile-header__save-btn';
+  saveBtn.setAttribute('aria-label', chrome.i18n.getMessage('profileLabelSave'));
+  saveBtn.title = chrome.i18n.getMessage('profileLabelSave');
+  saveBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+    </svg>
+  `;
+  saveBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    commit();
+  });
+
+  header.appendChild(icon);
+  header.appendChild(input);
+  header.appendChild(saveBtn);
+
+  input.focus();
+  input.select();
 }
 
 function renderOwnProfileTabs(profiles) {
