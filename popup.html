@@ -9,10 +9,20 @@
 <body>
   <div class="container" role="main" aria-label="Audio Tab Finder">
     <h1 id="popup-title"></h1>
-    <div id="tabs-list" role="list" aria-label="Tabs playing audio"></div>
+    <div id="profile-header" class="profile-header" aria-live="polite"></div>
+    <div id="host-banner" class="host-banner hidden" role="status"></div>
+    <div id="own-tabs-section" class="tabs-section">
+      <div id="own-tabs-list" role="list" aria-label="Tabs playing audio in this profile"></div>
+      <div id="own-empty" class="own-empty hidden"></div>
+    </div>
+    <div id="other-profiles-section" class="other-section hidden">
+      <div class="section-divider" id="other-profiles-header"></div>
+      <div id="other-profiles-list"></div>
+    </div>
     <div id="empty-state" class="empty-state hidden" role="status" aria-live="polite">
       <p id="empty-message"></p>
     </div>
+    <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
   </div>
   <script src="popup.js"></script>
 </body>
