@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
   initializeI18n();
   await loadAndRender();
+  setupKeyboardNavigation();
 });
 
 function initializeI18n() {
@@ -411,4 +412,57 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.remove('hidden');
   setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+function setupKeyboardNavigation() {
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea')) return;
+
+    const items = Array.from(document.querySelectorAll('.tab-item'));
+    if (items.length === 0) return;
+
+    const focused = items.findIndex((el) => el.contains(document.activeElement) || el === document.activeElement);
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        if (focused === -1) items[0].focus();
+        else if (focused < items.length - 1) items[focused + 1].focus();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (focused > 0) items[focused - 1].focus();
+        break;
+      case 'Home':
+        e.preventDefault();
+        items[0].focus();
+        break;
+      case 'End':
+        e.preventDefault();
+        items[items.length - 1].focus();
+        break;
+      case 'Enter':
+      case ' ':
+        if (focused !== -1 && document.activeElement === items[focused]) {
+          e.preventDefault();
+          items[focused].click();
+        }
+        break;
+      case 'm':
+      case 'M':
+        if (focused !== -1) {
+          const muteBtn = items[focused].querySelector('.mute-btn');
+          if (muteBtn) muteBtn.click();
+        }
+        break;
+      case 'Delete':
+      case 'Backspace':
+        if (focused !== -1) {
+          e.preventDefault();
+          const closeBtn = items[focused].querySelector('.close-btn');
+          if (closeBtn) closeBtn.click();
+        }
+        break;
+    }
+  });
 }
