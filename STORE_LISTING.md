@@ -46,6 +46,25 @@ Audio Tab Finder is your new best friend. One click shows you EXACTLY which tabs
 
 *Made with frustration and determination by someone who had way too many tabs open.*
 
+## NEW in v2.0: Cross-profile audio detection
+
+Have multiple Chrome profiles open? With the optional native helper,
+Audio Tab Finder shows audio tabs across ALL your Chrome profiles in one
+popup. Mute, close, or jump to a tab in any profile — all from a single
+view.
+
+The extension still works fine without the helper (single-profile mode,
+same as v1.x), but the cross-profile feature requires it because Chrome
+isolates profiles for security.
+
+Install instructions and source code:
+https://github.com/FrancisGregori/audio-tab-finder
+
+The native helper is open source, distributed via GitHub Releases, and
+makes no network connections. The macOS installer is signed and notarized
+by Apple. Linux and Windows builds are reproducible from public source via
+GitHub Actions.
+
 ## Category
 Productivity
 
@@ -86,3 +105,11 @@ For issues or feature requests, please visit our GitHub repository.
 - Small promo tile: 440x280
 - Large promo tile: 920x680
 - Marquee promo tile: 1400x560
+
+## Permissions Justification
+
+If asked to justify permissions during the Chrome Web Store review:
+
+- **`tabs`**: To detect which tabs are playing audio (required for the core feature) and to display tab titles, URLs, and favicons in the popup.
+- **`storage`**: To persist a per-profile UUID and a user-defined profile label across browser restarts. No personal data is stored.
+- **`nativeMessaging`**: To communicate with an optional native helper that detects audio playback across the user's Chrome profiles. The native helper is open source, distributed via GitHub, and only runs locally — no network communication. Source: https://github.com/FrancisGregori/audio-tab-finder
