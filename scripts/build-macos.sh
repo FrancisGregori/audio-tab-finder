@@ -18,8 +18,8 @@ mkdir -p "${DIST_DIR}"
 
 echo ">>> Building universal binary"
 cd "${HOST_DIR}"
-GOOS=darwin GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o "${DIST_DIR}/host-amd64" ./cmd/audio-tab-finder-host
-GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o "${DIST_DIR}/host-arm64" ./cmd/audio-tab-finder-host
+GOOS=darwin GOARCH=amd64 go build -trimpath -ldflags="-s -w -X github.com/FrancisGregori/audio-tab-finder/native-host/internal/handler.HostVersion=${VERSION}" -o "${DIST_DIR}/host-amd64" ./cmd/audio-tab-finder-host
+GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags="-s -w -X github.com/FrancisGregori/audio-tab-finder/native-host/internal/handler.HostVersion=${VERSION}" -o "${DIST_DIR}/host-arm64" ./cmd/audio-tab-finder-host
 lipo -create -output "${BIN_DIR}/audio-tab-finder-host" "${DIST_DIR}/host-amd64" "${DIST_DIR}/host-arm64"
 chmod 755 "${BIN_DIR}/audio-tab-finder-host"
 rm -f "${DIST_DIR}/host-amd64" "${DIST_DIR}/host-arm64"

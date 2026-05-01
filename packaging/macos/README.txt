@@ -8,7 +8,7 @@ The helper:
   - Is signed and notarized by Apple
   - Communicates only with the Audio Tab Finder Chrome extension
   - Reads and writes only files under
-    ~/Library/Application Support/AudioTabFinder/
+    /Library/Application Support/AudioTabFinder/
   - Makes no network connections
 
 After installation, reload the Audio Tab Finder extension in Chrome

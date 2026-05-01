@@ -15,7 +15,7 @@ mkdir -p "${STAGING}"
 
 echo ">>> Cross-compiling binary for windows/amd64"
 cd "${HOST_DIR}"
-GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o "${STAGING}/audio-tab-finder-host.exe" ./cmd/audio-tab-finder-host
+GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-s -w -X github.com/FrancisGregori/audio-tab-finder/native-host/internal/handler.HostVersion=${VERSION}" -o "${STAGING}/audio-tab-finder-host.exe" ./cmd/audio-tab-finder-host
 
 echo ">>> Bundling install scripts"
 cp "${ROOT}/packaging/windows/install.ps1" "${STAGING}/"

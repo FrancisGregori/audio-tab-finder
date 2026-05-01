@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const HostVersion = "0.1.0"
+var HostVersion = "dev"
 const DefaultActionTtlMs = 5000
 
 type Handler struct {

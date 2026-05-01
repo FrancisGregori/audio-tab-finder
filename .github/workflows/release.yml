@@ -47,13 +47,14 @@ jobs:
         env:
           CERT_BASE64: ${{ secrets.APPLE_CERT_INSTALLER_P12_BASE64 }}
           CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           echo "$CERT_BASE64" | base64 -d > /tmp/installer.p12
           security import /tmp/installer.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/productbuild
           rm /tmp/installer.p12
 
           # Allow codesign and productbuild to access the keychain
-          security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
+          security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" build.keychain
 
       - name: Find certificate identities
         id: identities

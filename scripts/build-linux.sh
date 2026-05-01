@@ -23,7 +23,7 @@ mkdir -p "${DIST_DIR}"
 
 echo ">>> Building binary for linux/${GO_ARCH}"
 cd "${HOST_DIR}"
-GOOS=linux GOARCH=${GO_ARCH} go build -trimpath -ldflags="-s -w" -o "${DIST_DIR}/audio-tab-finder-host" ./cmd/audio-tab-finder-host
+GOOS=linux GOARCH=${GO_ARCH} go build -trimpath -ldflags="-s -w -X github.com/FrancisGregori/audio-tab-finder/native-host/internal/handler.HostVersion=${VERSION}" -o "${DIST_DIR}/audio-tab-finder-host" ./cmd/audio-tab-finder-host
 
 # Generate the NM manifest file (used by RPM and tar.gz)
 cat > "${DIST_DIR}/com.fgregori.audio_tab_finder.json" <<EOF

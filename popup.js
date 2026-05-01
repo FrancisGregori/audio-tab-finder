@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupKeyboardNavigation();
 });
 
-const HOST_INSTALL_URL = 'https://github.com/FrancisGregori/audio-tab-finder#install';
+const HOST_INSTALL_URL = 'https://github.com/FrancisGregori/audio-tab-finder#installation';
 const HOST_RELEASES_URL = 'https://github.com/FrancisGregori/audio-tab-finder/releases/latest';
 
 function initializeI18n() {

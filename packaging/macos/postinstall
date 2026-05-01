@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 NM_DIR="/Library/Google/Chrome/NativeMessagingHosts"
 NM_FILE="${NM_DIR}/com.fgregori.audio_tab_finder.json"
