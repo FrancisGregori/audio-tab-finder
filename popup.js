@@ -308,13 +308,14 @@ async function activateTab(tab, isOwnProfile, ownerProfileUuid) {
       await chrome.tabs.update(tab.tab_id, { active: true });
       await chrome.windows.update(tab.window_id, { focused: true });
     } else {
-      await chrome.runtime.sendMessage({
+      const resp = await chrome.runtime.sendMessage({
         type: 'send_action',
         target_profile_uuid: ownerProfileUuid,
         action: 'activate',
         target_tab_id: tab.tab_id,
         target_window_id: tab.window_id,
       });
+      if (!resp || !resp.ok) throw new Error((resp && resp.error) || 'send_action failed');
     }
     window.close();
   } catch (e) {
