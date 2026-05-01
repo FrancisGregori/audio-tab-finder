@@ -31,14 +31,6 @@
     "message": "Outros perfis",
     "description": "Header for the cross-profile section"
   },
-  "nativeHostMissing": {
-    "message": "Instale o helper nativo para ver audio entre perfis",
-    "description": "Banner text when native messaging host is not installed"
-  },
-  "installInstructions": {
-    "message": "Instrucoes de instalacao",
-    "description": "Link text for native helper install instructions"
-  },
   "actionFailedToast": {
     "message": "Acao falhou. O outro perfil pode estar offline.",
     "description": "Toast shown when a cross-profile action fails or times out"
@@ -90,5 +82,29 @@
   "audioMuted": {
     "message": "Audio silenciado",
     "description": "Screen reader text for muted audio indicator"
+  },
+  "hostBannerExplanationMissing": {
+    "message": "O Audio Tab Finder pode detectar e controlar audio em todos os seus perfis Chrome. Isso requer instalar um pequeno helper nativo.",
+    "description": "Expanded explanation in the popup banner when host is not installed"
+  },
+  "hostBannerExplanationOutdated": {
+    "message": "Uma versao mais recente do helper nativo esta disponivel. Atualize para manter as features cross-profile funcionando bem.",
+    "description": "Expanded explanation in the popup banner when host is outdated"
+  },
+  "hostBannerLinkInstall": {
+    "message": "Como instalar →",
+    "description": "Link in the popup banner pointing to install instructions"
+  },
+  "hostBannerLinkUpdate": {
+    "message": "Baixar a versao mais recente →",
+    "description": "Link in the popup banner pointing to the latest release"
+  },
+  "hostBannerQuestionMissing": {
+    "message": "Detectar audio entre perfis?",
+    "description": "Question shown in the collapsed popup banner when host is missing"
+  },
+  "hostBannerQuestionOutdated": {
+    "message": "Atualizacao disponivel",
+    "description": "Question shown in the collapsed popup banner when host is outdated"
   }
 }
