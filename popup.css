@@ -80,17 +80,97 @@ h1::before {
 }
 .profile-header__input:focus { border-color: #4ade80; }
 
-/* Host banner */
+/* Host banner — collapsible footer with question + expansion panel */
 .host-banner {
-  background-color: #4a3010;
-  color: #ffd699;
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  font-size: 13px;
-  border-left: 3px solid #ff9800;
+  border-top: 1px solid #1f4068;
+  margin-top: 12px;
+  padding: 0;
+  background-color: transparent;
 }
-.host-banner a { color: #ffd699; text-decoration: underline; }
+
+.host-banner__strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #888;
+  font-size: 12px;
+  user-select: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.host-banner__strip:hover {
+  background-color: #16213e;
+  color: #fff;
+}
+
+.host-banner__strip:focus-visible {
+  outline: 2px solid #4ade80;
+  outline-offset: -2px;
+}
+
+.host-banner__icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.host-banner__icon svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.host-banner__question {
+  flex: 1;
+}
+
+.host-banner__chevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.host-banner__chevron svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+.host-banner--expanded .host-banner__chevron {
+  transform: rotate(180deg);
+}
+
+.host-banner__panel {
+  display: none;
+  padding: 4px 12px 12px 32px;
+  font-size: 12px;
+  color: #b0b0b0;
+  line-height: 1.5;
+}
+
+.host-banner--expanded .host-banner__panel {
+  display: block;
+}
+
+.host-banner__panel p {
+  margin: 0 0 8px 0;
+}
+
+.host-banner__link {
+  display: inline-block;
+  margin-top: 4px;
+  color: #4ade80;
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.host-banner__link:hover {
+  text-decoration: underline;
+}
 
 /* Section divider */
 .section-divider {
