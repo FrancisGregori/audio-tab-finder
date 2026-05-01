@@ -16,8 +16,52 @@
     "description": "Title shown in the popup"
   },
   "emptyStateMessage": {
-    "message": "Nenhuma aba tocando audio",
-    "description": "Message shown when no tabs are playing audio"
+    "message": "Nenhuma aba tocando audio neste perfil",
+    "description": "Message shown when no tabs are playing audio in the current profile"
+  },
+  "noAudioAnywhere": {
+    "message": "Nenhuma aba tocando audio em nenhum perfil",
+    "description": "Message shown when no profiles have audio (cross-profile)"
+  },
+  "thisProfileSilent": {
+    "message": "Este perfil esta silencioso",
+    "description": "Subtle line shown above 'Other profiles' section when own profile has no audio"
+  },
+  "otherProfilesHeader": {
+    "message": "Outros perfis",
+    "description": "Header for the cross-profile section"
+  },
+  "nativeHostMissing": {
+    "message": "Instale o helper nativo para ver audio entre perfis",
+    "description": "Banner text when native messaging host is not installed"
+  },
+  "installInstructions": {
+    "message": "Instrucoes de instalacao",
+    "description": "Link text for native helper install instructions"
+  },
+  "actionFailedToast": {
+    "message": "Acao falhou. O outro perfil pode estar offline.",
+    "description": "Toast shown when a cross-profile action fails or times out"
+  },
+  "profileLabelEmpty": {
+    "message": "Nomeie este perfil…",
+    "description": "Placeholder shown in profile header when no label is set"
+  },
+  "profileLabelEditAria": {
+    "message": "Editar nome do perfil",
+    "description": "ARIA label for the profile header click-to-edit affordance"
+  },
+  "profileLabelInputAria": {
+    "message": "Nome do perfil",
+    "description": "ARIA label for the profile name input in edit mode"
+  },
+  "profileLabelSave": {
+    "message": "Salvar nome do perfil",
+    "description": "ARIA label for save icon in profile name edit mode"
+  },
+  "thisProfileSuffix": {
+    "message": "(este perfil)",
+    "description": "Suffix shown next to own profile label in popup"
   },
   "muteTab": {
     "message": "Silenciar aba",

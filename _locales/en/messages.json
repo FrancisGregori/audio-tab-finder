@@ -16,8 +16,52 @@
     "description": "Title shown in the popup"
   },
   "emptyStateMessage": {
-    "message": "No tabs playing audio",
-    "description": "Message shown when no tabs are playing audio"
+    "message": "No tabs playing audio in this profile",
+    "description": "Message shown when no tabs are playing audio in the current profile"
+  },
+  "noAudioAnywhere": {
+    "message": "No tabs playing audio in any profile",
+    "description": "Message shown when no profiles have audio (cross-profile)"
+  },
+  "thisProfileSilent": {
+    "message": "This profile is silent",
+    "description": "Subtle line shown above 'Other profiles' section when own profile has no audio"
+  },
+  "otherProfilesHeader": {
+    "message": "Other profiles",
+    "description": "Header for the cross-profile section"
+  },
+  "nativeHostMissing": {
+    "message": "Install the native helper to see audio across profiles",
+    "description": "Banner text when native messaging host is not installed"
+  },
+  "installInstructions": {
+    "message": "Install instructions",
+    "description": "Link text for native helper install instructions"
+  },
+  "actionFailedToast": {
+    "message": "Action failed. The other profile may be offline.",
+    "description": "Toast shown when a cross-profile action fails or times out"
+  },
+  "profileLabelEmpty": {
+    "message": "Name this profile…",
+    "description": "Placeholder shown in profile header when no label is set"
+  },
+  "profileLabelEditAria": {
+    "message": "Edit profile name",
+    "description": "ARIA label for the profile header click-to-edit affordance"
+  },
+  "profileLabelInputAria": {
+    "message": "Profile name",
+    "description": "ARIA label for the profile name input in edit mode"
+  },
+  "profileLabelSave": {
+    "message": "Save profile name",
+    "description": "ARIA label for save icon in profile name edit mode"
+  },
+  "thisProfileSuffix": {
+    "message": "(this profile)",
+    "description": "Suffix shown next to own profile label in popup"
   },
   "muteTab": {
     "message": "Mute tab",

@@ -2,12 +2,12 @@
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "short_name": "__MSG_extensionShortName__",
-  "version": "1.0.4",
+  "version": "2.0.0",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "homepage_url": "https://github.com/FrancisGregori/audio-tab-finder",
   "offline_enabled": true,
-  "permissions": ["tabs"],
+  "permissions": ["tabs", "storage", "nativeMessaging"],
   "background": {
     "service_worker": "background.js"
   },
