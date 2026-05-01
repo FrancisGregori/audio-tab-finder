@@ -19,14 +19,15 @@ const HostVersion = "0.1.0"
 const DefaultActionTtlMs = 5000
 
 type Handler struct {
-	storeDir    string
-	profileUuid string
-	label       string
-	out         io.Writer
-	logger      *logging.Logger
-	watcher     *watcher.Watcher
-	mu          sync.Mutex
-	outMu       sync.Mutex
+	storeDir     string
+	profileUuid  string
+	label        string
+	out          io.Writer
+	logger       *logging.Logger
+	watcher      *watcher.Watcher
+	stateWatcher *watcher.StateWatcher
+	mu           sync.Mutex
+	outMu        sync.Mutex
 }
 
 func New(storeDir string, out io.Writer, logger *logging.Logger) *Handler {
@@ -46,6 +47,9 @@ func (h *Handler) writeJSON(v any) error {
 func (h *Handler) Close() {
 	if h.watcher != nil {
 		h.watcher.Close()
+	}
+	if h.stateWatcher != nil {
+		h.stateWatcher.Close()
 	}
 }
 
@@ -104,7 +108,41 @@ func (h *Handler) startWatcher() error {
 		return err
 	}
 	h.watcher = w
+
+	sw, err := watcher.NewStateWatcher(
+		filepath.Join(h.storeDir, "state"),
+		h.onStateChanged,
+	)
+	if err != nil {
+		w.Close()
+		h.watcher = nil
+		return err
+	}
+	h.stateWatcher = sw
 	return nil
+}
+
+func (h *Handler) onStateChanged() {
+	profiles, err := store.ReadAllStates(h.storeDir)
+	if err != nil {
+		return
+	}
+	h.mu.Lock()
+	selfUuid := h.profileUuid
+	h.mu.Unlock()
+	out := make([]nmproto.AggregateProfile, 0, len(profiles))
+	for _, p := range profiles {
+		out = append(out, nmproto.AggregateProfile{
+			ProfileUuid: p.ProfileUuid,
+			Label:       p.Label,
+			IsSelf:      p.ProfileUuid == selfUuid,
+			Tabs:        p.Tabs,
+		})
+	}
+	_ = h.writeJSON(nmproto.StateChanged{
+		Type:     "state_changed",
+		Profiles: out,
+	})
 }
 
 func (h *Handler) onActionPushed(a store.Action) {

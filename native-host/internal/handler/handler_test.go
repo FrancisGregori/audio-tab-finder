@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,17 +13,62 @@ import (
 	"github.com/FrancisGregori/audio-tab-finder/native-host/internal/store"
 )
 
+// captureWriter accumulates NM-framed messages in a thread-safe byte buffer.
+// Concurrent writes from the state-watcher goroutine are serialised via mu.
+// Reads (lastMessage / nextMessageOfType) copy the current buffer snapshot
+// under the lock so they don't block writers.
 type captureWriter struct {
-	bytes.Buffer
+	mu  sync.Mutex
+	buf bytes.Buffer
 }
 
+func (c *captureWriter) Write(p []byte) (int, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.buf.Write(p)
+}
+
+func (c *captureWriter) Reset() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.buf.Reset()
+}
+
+// snapshot returns a copy of the current buffer contents.
+func (c *captureWriter) snapshot() []byte {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	cp := make([]byte, c.buf.Len())
+	copy(cp, c.buf.Bytes())
+	return cp
+}
+
+// lastMessage scans the current buffer snapshot for the first NM frame that
+// is NOT a "state_changed" push.  It retries up to 2 s to allow synchronous
+// handler responses that arrive after an async state_changed flush.
 func (c *captureWriter) lastMessage(t *testing.T) []byte {
 	t.Helper()
-	data, err := nmproto.Read(&c.Buffer)
-	if err != nil {
-		t.Fatalf("no message captured: %v", err)
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		snap := c.snapshot()
+		r := bytes.NewReader(snap)
+		for {
+			data, err := nmproto.Read(r)
+			if err != nil {
+				break // no more frames yet – retry after sleep
+			}
+			var base struct {
+				Type string `json:"type"`
+			}
+			if json.Unmarshal(data, &base) == nil && base.Type == "state_changed" {
+				continue // skip async push, keep scanning
+			}
+			return data
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
-	return data
+	t.Fatalf("no non-state_changed message captured within timeout")
+	return nil
 }
 
 func newHandler(t *testing.T) (*Handler, *captureWriter, string) {

@@ -86,3 +86,8 @@ type ErrorMsg struct {
 	Code      string `json:"code"`
 	Message   string `json:"message"`
 }
+
+type StateChanged struct {
+	Type     string             `json:"type"`
+	Profiles []AggregateProfile `json:"profiles"`
+}
