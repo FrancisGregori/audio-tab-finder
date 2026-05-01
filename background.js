@@ -11,9 +11,17 @@ chrome.runtime.onInstalled.addListener(initialize);
 
 setupPopupBridge();
 
+let _lastAggregateProfiles = null;
+
 setHostMessageHandler((msg) => {
-  if (msg && msg.type === 'action_request') {
+  if (!msg) return;
+  if (msg.type === 'action_request') {
     handleActionRequest(msg);
+    return;
+  }
+  if (msg.type === 'state_changed') {
+    _lastAggregateProfiles = Array.isArray(msg.profiles) ? msg.profiles : null;
+    updateBadge();
   }
 });
 
@@ -21,6 +29,9 @@ setHostConnectionChangeHandler(async (connected) => {
   if (connected) {
     await sendInitialHello();
     sendCurrentState();
+  } else {
+    _lastAggregateProfiles = null;
+    updateBadge();
   }
 });
 
@@ -45,10 +56,28 @@ async function initialize() {
 
 async function updateBadge() {
   try {
-    const tabs = await chrome.tabs.query({ audible: true });
-    const count = tabs.length;
-    if (count > 0) {
-      chrome.action.setBadgeText({ text: count.toString() });
+    const ownTabs = await chrome.tabs.query({ audible: true });
+    const ownCount = ownTabs.length;
+
+    let totalCount = ownCount;
+    if (_lastAggregateProfiles) {
+      totalCount = 0;
+      for (const p of _lastAggregateProfiles) {
+        if (p && Array.isArray(p.tabs)) totalCount += p.tabs.length;
+      }
+    }
+
+    let text = '';
+    if (totalCount === 0) {
+      text = '';
+    } else if (totalCount === ownCount) {
+      text = String(ownCount);
+    } else {
+      text = `${ownCount}/${totalCount}`;
+    }
+
+    if (text) {
+      chrome.action.setBadgeText({ text });
       chrome.action.setBadgeBackgroundColor({ color: '#4ade80' });
     } else {
       chrome.action.setBadgeText({ text: '' });
