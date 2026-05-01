@@ -1,0 +1,32 @@
+Name:           audio-tab-finder-host
+Version:        __VERSION__
+Release:        1%{?dist}
+Summary:        Native messaging host for the Audio Tab Finder Chrome extension
+License:        MIT
+URL:            https://github.com/FrancisGregori/audio-tab-finder
+Source0:        audio-tab-finder-host
+Source1:        com.fgregori.audio_tab_finder.json
+BuildArch:      __RPM_ARCH__
+AutoReqProv:    no
+
+%description
+Allows the Audio Tab Finder Chrome extension to detect audio playback
+across multiple Chrome profiles via Chrome's native messaging protocol.
+The host runs locally only and makes no network connections.
+
+%prep
+# nothing to prep — pre-built binary
+
+%install
+mkdir -p %{buildroot}/usr/bin
+mkdir -p %{buildroot}/etc/opt/chrome/native-messaging-hosts
+install -m 0755 %{SOURCE0} %{buildroot}/usr/bin/audio-tab-finder-host
+install -m 0644 %{SOURCE1} %{buildroot}/etc/opt/chrome/native-messaging-hosts/com.fgregori.audio_tab_finder.json
+
+%files
+/usr/bin/audio-tab-finder-host
+/etc/opt/chrome/native-messaging-hosts/com.fgregori.audio_tab_finder.json
+
+%changelog
+* Fri May 01 2026 Francis Gregori <francis.g.munis@gmail.com> - %{version}-1
+- Public release.
