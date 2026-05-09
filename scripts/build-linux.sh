@@ -60,10 +60,15 @@ RPM_FILE="${DIST_DIR}/audio-tab-finder-host-${VERSION}-linux-${GO_ARCH}.rpm"
 RPM_BUILD_DIR="${DIST_DIR}/rpm-build"
 mkdir -p "${RPM_BUILD_DIR}/SOURCES" "${RPM_BUILD_DIR}/SPECS"
 
+# RPM Version field rejects '-' (used as separator from Release).
+# Replace any hyphen with underscore for the spec only; user-facing filename
+# keeps the original VERSION so artifacts match the git tag.
+RPM_VERSION="${VERSION//-/_}"
+
 cp "${DIST_DIR}/audio-tab-finder-host" "${RPM_BUILD_DIR}/SOURCES/"
 cp "${DIST_DIR}/com.fgregori.audio_tab_finder.json" "${RPM_BUILD_DIR}/SOURCES/"
 
-sed -e "s|__VERSION__|${VERSION}|g" -e "s|__RPM_ARCH__|${RPM_ARCH}|g" \
+sed -e "s|__VERSION__|${RPM_VERSION}|g" -e "s|__RPM_ARCH__|${RPM_ARCH}|g" \
   "${ROOT}/packaging/linux/rpm/audio-tab-finder-host.spec.tmpl" \
   > "${RPM_BUILD_DIR}/SPECS/audio-tab-finder-host.spec"
 
@@ -71,7 +76,7 @@ rpmbuild --define "_topdir ${RPM_BUILD_DIR}" \
   --target "${RPM_ARCH}" \
   -bb "${RPM_BUILD_DIR}/SPECS/audio-tab-finder-host.spec"
 
-mv "${RPM_BUILD_DIR}/RPMS/${RPM_ARCH}/audio-tab-finder-host-${VERSION}-1."*.rpm "${RPM_FILE}"
+mv "${RPM_BUILD_DIR}/RPMS/${RPM_ARCH}/audio-tab-finder-host-${RPM_VERSION}-1."*.rpm "${RPM_FILE}"
 
 echo ">>> Building .tar.gz"
 TARGZ_STAGE="${DIST_DIR}/targz-stage"
