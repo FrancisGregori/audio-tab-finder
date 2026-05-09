@@ -27,13 +27,27 @@ rm -f "${DIST_DIR}/host-amd64" "${DIST_DIR}/host-arm64"
 # codesign and productbuild --sign contact Apple's RFC3161 timestamp server
 # (timestamp.apple.com). productbuild --sign in particular can hang
 # indefinitely if the server is slow/unreachable. Wrap each attempt in a
-# per-command timeout so a hang gets killed and we get a real chance to retry.
-TIMEOUT_BIN=""
-if command -v gtimeout >/dev/null 2>&1; then
-  TIMEOUT_BIN="gtimeout"
-elif command -v timeout >/dev/null 2>&1; then
-  TIMEOUT_BIN="timeout"
-fi
+# pure-bash per-command timeout so a hang gets killed and the next attempt
+# fires. We avoid depending on `gtimeout`/`timeout` because those aren't
+# guaranteed to be in PATH on the GitHub macos-14 runner.
+run_with_timeout() {
+  local secs=$1
+  shift
+  "$@" &
+  local pid=$!
+  (
+    sleep "$secs"
+    kill -TERM "$pid" 2>/dev/null && sleep 2 && kill -KILL "$pid" 2>/dev/null
+  ) &
+  local watcher=$!
+  local rc
+  if wait "$pid" 2>/dev/null; then rc=0; else rc=$?; fi
+  kill -KILL "$watcher" 2>/dev/null
+  wait "$watcher" 2>/dev/null || true
+  # SIGTERM=143, SIGKILL=137 → treat both as "timed out"
+  if [ $rc -eq 143 ] || [ $rc -eq 137 ]; then return 124; fi
+  return $rc
+}
 
 retry() {
   local attempts=3
@@ -41,18 +55,13 @@ retry() {
   local per_attempt_timeout=150
   local i rc
   for (( i=1; i<=attempts; i++ )); do
-    if [ -n "$TIMEOUT_BIN" ]; then
-      "$TIMEOUT_BIN" "$per_attempt_timeout" "$@"
-      rc=$?
-      [ $rc -eq 0 ] && return 0
-      if [ $rc -eq 124 ]; then
-        echo "  attempt $i timed out after ${per_attempt_timeout}s"
-      else
-        echo "  attempt $i failed (exit=$rc)"
-      fi
+    run_with_timeout "$per_attempt_timeout" "$@"
+    rc=$?
+    [ $rc -eq 0 ] && return 0
+    if [ $rc -eq 124 ]; then
+      echo "  attempt $i timed out after ${per_attempt_timeout}s"
     else
-      "$@" && return 0
-      echo "  attempt $i failed"
+      echo "  attempt $i failed (exit=$rc)"
     fi
     [ "$i" -lt "$attempts" ] && { echo "  retrying in ${delay}s..."; sleep "$delay"; }
   done
