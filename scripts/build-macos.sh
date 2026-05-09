@@ -40,12 +40,15 @@ run_with_timeout() {
     kill -TERM "$pid" 2>/dev/null && sleep 2 && kill -KILL "$pid" 2>/dev/null
   ) &
   local watcher=$!
-  local rc
-  if wait "$pid" 2>/dev/null; then rc=0; else rc=$?; fi
-  kill -KILL "$watcher" 2>/dev/null
+  local rc=0
+  # `wait` for the foreground command. Use `|| rc=$?` so set -e doesn't
+  # abort the script on the failing command itself — that would defeat
+  # the whole retry mechanism.
+  wait "$pid" 2>/dev/null || rc=$?
+  kill -KILL "$watcher" 2>/dev/null || true
   wait "$watcher" 2>/dev/null || true
   # SIGTERM=143, SIGKILL=137 → treat both as "timed out"
-  if [ $rc -eq 143 ] || [ $rc -eq 137 ]; then return 124; fi
+  if [ "$rc" -eq 143 ] || [ "$rc" -eq 137 ]; then return 124; fi
   return $rc
 }
 
@@ -55,15 +58,18 @@ retry() {
   local per_attempt_timeout=150
   local i rc
   for (( i=1; i<=attempts; i++ )); do
-    run_with_timeout "$per_attempt_timeout" "$@"
-    rc=$?
-    [ $rc -eq 0 ] && return 0
-    if [ $rc -eq 124 ]; then
+    rc=0
+    run_with_timeout "$per_attempt_timeout" "$@" || rc=$?
+    if [ "$rc" -eq 0 ]; then return 0; fi
+    if [ "$rc" -eq 124 ]; then
       echo "  attempt $i timed out after ${per_attempt_timeout}s"
     else
       echo "  attempt $i failed (exit=$rc)"
     fi
-    [ "$i" -lt "$attempts" ] && { echo "  retrying in ${delay}s..."; sleep "$delay"; }
+    if [ "$i" -lt "$attempts" ]; then
+      echo "  retrying in ${delay}s..."
+      sleep "$delay"
+    fi
   done
   echo "  all $attempts attempts failed"
   return 1
