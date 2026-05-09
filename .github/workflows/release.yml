@@ -65,7 +65,7 @@ jobs:
           echo "installer=$INSTALLER_NAME" >> $GITHUB_OUTPUT
 
       - name: Build .pkg
-        timeout-minutes: 10
+        timeout-minutes: 20
         env:
           MACOS_CERT_APP_NAME: ${{ steps.identities.outputs.app }}
           MACOS_CERT_INSTALLER_NAME: ${{ steps.identities.outputs.installer }}

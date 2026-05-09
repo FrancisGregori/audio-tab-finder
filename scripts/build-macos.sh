@@ -25,18 +25,36 @@ chmod 755 "${BIN_DIR}/audio-tab-finder-host"
 rm -f "${DIST_DIR}/host-amd64" "${DIST_DIR}/host-arm64"
 
 # codesign and productbuild --sign contact Apple's RFC3161 timestamp server
-# (timestamp.apple.com), which is intermittently slow. Retry up to 3 times
-# with backoff before giving up.
+# (timestamp.apple.com). productbuild --sign in particular can hang
+# indefinitely if the server is slow/unreachable. Wrap each attempt in a
+# per-command timeout so a hang gets killed and we get a real chance to retry.
+TIMEOUT_BIN=""
+if command -v gtimeout >/dev/null 2>&1; then
+  TIMEOUT_BIN="gtimeout"
+elif command -v timeout >/dev/null 2>&1; then
+  TIMEOUT_BIN="timeout"
+fi
+
 retry() {
   local attempts=3
-  local delay=20
-  local i
+  local delay=15
+  local per_attempt_timeout=150
+  local i rc
   for (( i=1; i<=attempts; i++ )); do
-    if "$@"; then return 0; fi
-    if [ "$i" -lt "$attempts" ]; then
-      echo "  attempt $i failed; retrying in ${delay}s..."
-      sleep "$delay"
+    if [ -n "$TIMEOUT_BIN" ]; then
+      "$TIMEOUT_BIN" "$per_attempt_timeout" "$@"
+      rc=$?
+      [ $rc -eq 0 ] && return 0
+      if [ $rc -eq 124 ]; then
+        echo "  attempt $i timed out after ${per_attempt_timeout}s"
+      else
+        echo "  attempt $i failed (exit=$rc)"
+      fi
+    else
+      "$@" && return 0
+      echo "  attempt $i failed"
     fi
+    [ "$i" -lt "$attempts" ] && { echo "  retrying in ${delay}s..."; sleep "$delay"; }
   done
   echo "  all $attempts attempts failed"
   return 1
