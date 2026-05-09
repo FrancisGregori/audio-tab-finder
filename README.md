@@ -17,15 +17,41 @@ across all your Chrome profiles.
 Audio Tab Finder works in two steps:
 
 1. Install the Chrome extension (required)
-2. Install the native helper for your OS (optional, but required for cross-profile features)
-
-Without the native helper, the extension still works for the current Chrome profile (same as v1.x).
+2. Install the native helper for your OS (optional — only needed if you want to detect audio across multiple Chrome profiles)
 
 ### Step 1: Chrome extension
 
+You can install the extension in either of two ways:
+
+#### Option A — Chrome Web Store (recommended)
+
 [Install from Chrome Web Store](https://chromewebstore.google.com/detail/audio-tab-finder-%E2%80%93-find-m/ecnkofmcbijompohhddkaaekdaenhmhh)
 
-### Step 2: Native helper
+You get automatic updates and Google-reviewed binaries.
+
+#### Option B — Load unpacked from source (developer mode)
+
+For users who want to inspect or modify the code before installing:
+
+1. Clone or download this repository
+2. Open `chrome://extensions` in Chrome
+3. Enable **Developer mode** (toggle in the top right)
+4. Click **Load unpacked** and select the project folder
+5. The extension is now active
+
+Note: with this method you won't get automatic updates — you'll need to pull changes manually and reload the extension.
+
+### Step 2: Native helper (optional — cross-profile audio detection)
+
+**Do you need this?**
+
+- **You use a single Chrome profile?** No — skip this step. The extension already detects audio in your current profile (same as v1.x). Audio Tab Finder will work fine without the helper.
+- **You have multiple Chrome profiles open at the same time?** Install the helper if you want to:
+  - See *which* Chrome profile is playing audio
+  - Mute or close audio tabs across all your profiles from a single popup
+  - See a badge with the total count of audio tabs playing across all profiles
+
+If you don't install the helper, a small "Detect audio across profiles?" banner appears in the popup with a link back here. You can install the helper later at any time.
 
 Choose your operating system:
 

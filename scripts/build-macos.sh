@@ -24,9 +24,27 @@ lipo -create -output "${BIN_DIR}/audio-tab-finder-host" "${DIST_DIR}/host-amd64"
 chmod 755 "${BIN_DIR}/audio-tab-finder-host"
 rm -f "${DIST_DIR}/host-amd64" "${DIST_DIR}/host-arm64"
 
+# codesign and productbuild --sign contact Apple's RFC3161 timestamp server
+# (timestamp.apple.com), which is intermittently slow. Retry up to 3 times
+# with backoff before giving up.
+retry() {
+  local attempts=3
+  local delay=20
+  local i
+  for (( i=1; i<=attempts; i++ )); do
+    if "$@"; then return 0; fi
+    if [ "$i" -lt "$attempts" ]; then
+      echo "  attempt $i failed; retrying in ${delay}s..."
+      sleep "$delay"
+    fi
+  done
+  echo "  all $attempts attempts failed"
+  return 1
+}
+
 echo ">>> Codesigning binary"
 if [ -n "${MACOS_CERT_APP_NAME:-}" ]; then
-  codesign --force --options runtime --timestamp \
+  retry codesign --force --options runtime --timestamp \
     --sign "${MACOS_CERT_APP_NAME}" \
     "${BIN_DIR}/audio-tab-finder-host"
 else
@@ -54,6 +72,6 @@ if [ -n "${MACOS_CERT_INSTALLER_NAME:-}" ]; then
   PRODUCTBUILD_ARGS+=(--sign "${MACOS_CERT_INSTALLER_NAME}")
 fi
 
-productbuild "${PRODUCTBUILD_ARGS[@]}"
+retry productbuild "${PRODUCTBUILD_ARGS[@]}"
 
 echo ">>> Done: ${FINAL_PKG}"
