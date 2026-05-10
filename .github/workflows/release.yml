@@ -50,11 +50,14 @@ jobs:
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           echo "$CERT_BASE64" | base64 -d > /tmp/installer.p12
-          security import /tmp/installer.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/productbuild
+          # We use pkgbuild --sign now (productbuild --sign hung in CI), so
+          # pkgbuild needs to be in the access list. Include productbuild too
+          # for forward compatibility if we re-introduce a distribution wrapper.
+          security import /tmp/installer.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/pkgbuild -T /usr/bin/productbuild
           rm /tmp/installer.p12
 
-          # Allow codesign and productbuild to access the keychain
-          security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          # Allow codesign, pkgbuild, productbuild to access the keychain
+          security set-key-partition-list -S apple-tool:,apple:,codesign:,pkgbuild:,productbuild: -s -k "$KEYCHAIN_PASSWORD" build.keychain
 
       - name: Find certificate identities
         id: identities
