@@ -1,12 +1,15 @@
 const NATIVE_HOST_NAME = 'com.fgregori.audio_tab_finder';
 
+const EXPECTED_HOST_VERSION = '2.0.0';
+
 const _hostState = {
   port: null,
   connected: false,
   reconnectMs: 1000,
-  pending: new Map(), // request_id -> { resolve, reject, timeoutId }
-  onMessage: null,    // callback(msg) for unsolicited pushes (action_request)
-  onConnectionChange: null, // callback(connected: boolean)
+  pending: new Map(),
+  onMessage: null,
+  onConnectionChange: null,
+  hostVersion: null,
 };
 
 const HOST_REQUEST_TIMEOUT_MS = 3000;
@@ -48,6 +51,9 @@ async function connectToHost() {
 }
 
 function handleIncomingMessage(msg) {
+  if (msg && msg.type === 'hello_ack' && typeof msg.host_version === 'string') {
+    _hostState.hostVersion = msg.host_version;
+  }
   if (msg && msg.request_id && _hostState.pending.has(msg.request_id)) {
     const { resolve, timeoutId } = _hostState.pending.get(msg.request_id);
     clearTimeout(timeoutId);
@@ -63,6 +69,7 @@ function handleIncomingMessage(msg) {
 function handleDisconnect() {
   _hostState.port = null;
   _hostState.connected = false;
+  _hostState.hostVersion = null;
   if (_hostState.onConnectionChange) _hostState.onConnectionChange(false);
 
   for (const { reject, timeoutId } of _hostState.pending.values()) {
@@ -111,4 +118,24 @@ function sendToHostFireAndForget(message) {
   } catch (e) {
     // swallow; will reconnect on next attempt
   }
+}
+
+function getHostVersion() {
+  return _hostState.hostVersion;
+}
+
+function isHostOutdated() {
+  if (!_hostState.hostVersion) return false;
+  return semverCompare(_hostState.hostVersion, EXPECTED_HOST_VERSION) < 0;
+}
+
+function semverCompare(a, b) {
+  const pa = String(a).split('.').map((x) => parseInt(x, 10) || 0);
+  const pb = String(b).split('.').map((x) => parseInt(x, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    const av = pa[i] || 0;
+    const bv = pb[i] || 0;
+    if (av !== bv) return av - bv;
+  }
+  return 0;
 }

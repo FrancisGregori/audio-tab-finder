@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupKeyboardNavigation();
 });
 
+const HOST_INSTALL_URL = 'https://github.com/FrancisGregori/audio-tab-finder#installation';
+const HOST_RELEASES_URL = 'https://github.com/FrancisGregori/audio-tab-finder/releases/latest';
+
 function initializeI18n() {
   document.getElementById('popup-title').textContent = chrome.i18n.getMessage('popupTitle');
   document.getElementById('empty-message').textContent = chrome.i18n.getMessage('noAudioAnywhere');
@@ -17,24 +20,95 @@ async function loadAndRender() {
     showToast((resp && resp.error) || 'failed to load');
     return;
   }
-  renderHostBanner(resp.hostInstalled);
+  renderHostBanner(resp.hostInstalled, resp.hostStatus);
   renderProfileHeader(resp.profiles);
   renderOwnProfileTabs(resp.profiles);
   renderOtherProfiles(resp.profiles);
   renderEmptyState(resp.profiles);
 }
 
-function renderHostBanner(hostInstalled) {
+function renderHostBanner(hostInstalled, hostStatus) {
   const banner = document.getElementById('host-banner');
-  if (hostInstalled) {
+  banner.innerHTML = '';
+  banner.classList.remove('host-banner--expanded');
+
+  if (hostInstalled && hostStatus === 'ok') {
     banner.classList.add('hidden');
     return;
   }
-  banner.innerHTML = '';
-  const text = document.createElement('span');
-  text.textContent = chrome.i18n.getMessage('nativeHostMissing');
-  banner.appendChild(text);
+
   banner.classList.remove('hidden');
+
+  const isOutdated = hostInstalled && hostStatus === 'outdated';
+
+  const strip = document.createElement('div');
+  strip.className = 'host-banner__strip';
+  strip.tabIndex = 0;
+  strip.setAttribute('role', 'button');
+  strip.setAttribute('aria-expanded', 'false');
+
+  const icon = document.createElement('span');
+  icon.className = 'host-banner__icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = `
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11 9h2v2h-2zm0 4h2v6h-2zm1-9C6.48 4 2 8.48 2 14s4.48 10 10 10 10-4.48 10-10S17.52 4 12 4zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+    </svg>
+  `;
+
+  const question = document.createElement('span');
+  question.className = 'host-banner__question';
+  question.textContent = isOutdated
+    ? chrome.i18n.getMessage('hostBannerQuestionOutdated')
+    : chrome.i18n.getMessage('hostBannerQuestionMissing');
+
+  const chevron = document.createElement('span');
+  chevron.className = 'host-banner__chevron';
+  chevron.setAttribute('aria-hidden', 'true');
+  chevron.innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>`;
+
+  strip.appendChild(icon);
+  strip.appendChild(question);
+  strip.appendChild(chevron);
+
+  const panel = document.createElement('div');
+  panel.className = 'host-banner__panel';
+
+  const explanation = document.createElement('p');
+  explanation.textContent = isOutdated
+    ? chrome.i18n.getMessage('hostBannerExplanationOutdated')
+    : chrome.i18n.getMessage('hostBannerExplanationMissing');
+
+  const link = document.createElement('a');
+  link.className = 'host-banner__link';
+  link.textContent = isOutdated
+    ? chrome.i18n.getMessage('hostBannerLinkUpdate')
+    : chrome.i18n.getMessage('hostBannerLinkInstall');
+  link.href = '#';
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    chrome.tabs.create({ url: isOutdated ? HOST_RELEASES_URL : HOST_INSTALL_URL });
+    window.close();
+  });
+
+  panel.appendChild(explanation);
+  panel.appendChild(link);
+
+  const toggle = () => {
+    const expanded = banner.classList.toggle('host-banner--expanded');
+    strip.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  };
+  strip.addEventListener('click', toggle);
+  strip.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggle();
+    }
+  });
+
+  banner.appendChild(strip);
+  banner.appendChild(panel);
 }
 
 function getOwnProfile(profiles) {

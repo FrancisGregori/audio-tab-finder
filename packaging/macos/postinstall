@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+NM_DIR="/Library/Google/Chrome/NativeMessagingHosts"
+NM_FILE="${NM_DIR}/com.fgregori.audio_tab_finder.json"
+BINARY="/Library/Application Support/AudioTabFinder/audio-tab-finder-host"
+EXTENSION_ID="ecnkofmcbijompohhddkaaekdaenhmhh"
+
+mkdir -p "${NM_DIR}"
+
+cat > "${NM_FILE}" <<EOF
+{
+  "name": "com.fgregori.audio_tab_finder",
+  "description": "Audio Tab Finder native helper",
+  "path": "${BINARY}",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://${EXTENSION_ID}/"
+  ]
+}
+EOF
+
+chmod 644 "${NM_FILE}"
+exit 0

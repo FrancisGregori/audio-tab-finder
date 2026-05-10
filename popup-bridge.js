@@ -27,6 +27,8 @@ async function handleGetAggregate() {
     return {
       ok: true,
       hostInstalled: false,
+      hostStatus: 'disconnected',
+      hostVersion: null,
       profiles: [
         {
           profile_uuid: null,
@@ -39,9 +41,15 @@ async function handleGetAggregate() {
   }
   try {
     const resp = await sendToHost({ type: 'get_aggregate' });
-    return { ok: true, hostInstalled: true, profiles: resp.profiles };
+    return {
+      ok: true,
+      hostInstalled: true,
+      hostStatus: isHostOutdated() ? 'outdated' : 'ok',
+      hostVersion: getHostVersion(),
+      profiles: resp.profiles,
+    };
   } catch (e) {
-    return { ok: false, hostInstalled: true, error: e.message };
+    return { ok: false, hostInstalled: true, hostStatus: 'unknown', hostVersion: null, error: e.message };
   }
 }
 
