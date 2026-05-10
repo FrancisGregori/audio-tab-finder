@@ -56,8 +56,13 @@ make uninstall
 
 ## Building production artifacts locally
 
-The CI pipeline (`.github/workflows/release.yml`) handles signed/notarized
-builds for releases. To build artifacts locally for testing (unsigned):
+CI (`.github/workflows/release.yml`) handles **Linux + Windows** automatically
+when a `v*` tag is pushed. **macOS is built and signed locally** because the
+GitHub macos-14 runner cannot sign installer packages reliably (productbuild
+and pkgbuild both hang on the keychain in that environment, regardless of
+keychain configuration).
+
+To build artifacts locally for testing (unsigned):
 
 ```bash
 # macOS .pkg (unsigned dev build)
@@ -75,6 +80,40 @@ Output artifacts go to `dist/<platform>/`.
 
 The Linux build script requires `dpkg-deb` and `rpmbuild` to be installed.
 On macOS, install via Homebrew: `brew install dpkg rpm`.
+
+### Releasing a signed + notarized macOS .pkg
+
+For a real release (e.g. `v2.0.0`), the macOS `.pkg` must be signed with
+your Developer ID Installer cert and notarized by Apple. Use
+`scripts/release-macos.sh` — it does the full flow:
+
+1. Build universal binary (darwin amd64 + arm64 → lipo)
+2. `codesign` the binary with Developer ID Application
+3. `pkgbuild --sign` with Developer ID Installer
+4. `xcrun notarytool submit --wait`
+5. `xcrun stapler staple`
+6. `spctl --assess` to confirm Gatekeeper acceptance
+7. `gh release upload v<version> <pkg>` to the existing GitHub release
+
+Set these environment variables once (e.g. in your `~/.zshrc` or in a
+`.envrc` file you don't commit):
+
+```bash
+export APPLE_DEVELOPER_ID_APP="Developer ID Application: Your Name (TEAMID)"
+export APPLE_DEVELOPER_ID_INST="Developer ID Installer: Your Name (TEAMID)"
+export APPLE_ID="you@example.com"
+export APPLE_TEAM_ID="TEAMID"
+export APPLE_APP_PASSWORD="xxxx-xxxx-xxxx-xxxx"   # app-specific password
+```
+
+Then run, AFTER the CI workflow has created the release with the
+Linux/Windows artifacts:
+
+```bash
+./scripts/release-macos.sh 2.0.0
+```
+
+The signed `.pkg` will be appended to the existing GitHub release.
 
 ## Project layout
 

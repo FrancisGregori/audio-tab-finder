@@ -8,99 +8,15 @@ on:
 permissions:
   contents: write
 
+# NOTE: macOS .pkg is NOT built in CI. The GitHub macos-14 runner cannot
+# sign installer packages — both productbuild --sign and pkgbuild --sign
+# hang indefinitely on every signing attempt (verified across multiple
+# runs / multiple tool variations / multiple keychain configurations).
+# The signed + notarized .pkg is built locally on a developer Mac via
+# scripts/release-macos.sh and uploaded to the Release page after the
+# Linux/Windows artifacts are published. See docs/BUILDING.md.
+
 jobs:
-  build-macos:
-    name: Build macOS .pkg
-    runs-on: macos-14
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-          cache-dependency-path: native-host/go.sum
-
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Import Application certificate
-        env:
-          CERT_BASE64: ${{ secrets.APPLE_CERT_APPLICATION_P12_BASE64 }}
-          CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        run: |
-          # Create a temporary keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security set-keychain-settings -lut 3600 build.keychain
-
-          # Decode and import Application certificate
-          echo "$CERT_BASE64" | base64 -d > /tmp/app.p12
-          security import /tmp/app.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
-          rm /tmp/app.p12
-
-      - name: Import Installer certificate
-        env:
-          CERT_BASE64: ${{ secrets.APPLE_CERT_INSTALLER_P12_BASE64 }}
-          CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        run: |
-          echo "$CERT_BASE64" | base64 -d > /tmp/installer.p12
-          # We use pkgbuild --sign now (productbuild --sign hung in CI), so
-          # pkgbuild needs to be in the access list. Include productbuild too
-          # for forward compatibility if we re-introduce a distribution wrapper.
-          security import /tmp/installer.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/pkgbuild -T /usr/bin/productbuild
-          rm /tmp/installer.p12
-
-          # Allow codesign, pkgbuild, productbuild to access the keychain
-          security set-key-partition-list -S apple-tool:,apple:,codesign:,pkgbuild:,productbuild: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-
-      - name: Find certificate identities
-        id: identities
-        run: |
-          APP_NAME=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
-          INSTALLER_NAME=$(security find-identity -v build.keychain | grep "Developer ID Installer" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
-          echo "app=$APP_NAME" >> $GITHUB_OUTPUT
-          echo "installer=$INSTALLER_NAME" >> $GITHUB_OUTPUT
-
-      - name: Build .pkg
-        timeout-minutes: 20
-        env:
-          MACOS_CERT_APP_NAME: ${{ steps.identities.outputs.app }}
-          MACOS_CERT_INSTALLER_NAME: ${{ steps.identities.outputs.installer }}
-        run: ./scripts/build-macos.sh "${{ steps.version.outputs.version }}"
-
-      - name: Notarize .pkg
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-        run: |
-          PKG_PATH="dist/macos/audio-tab-finder-host-${{ steps.version.outputs.version }}-macos-universal.pkg"
-          xcrun notarytool submit "$PKG_PATH" \
-            --apple-id "$APPLE_ID" \
-            --team-id "$APPLE_TEAM_ID" \
-            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
-            --wait
-
-      - name: Staple notarization
-        run: |
-          xcrun stapler staple "dist/macos/audio-tab-finder-host-${{ steps.version.outputs.version }}-macos-universal.pkg"
-
-      - name: Verify .pkg
-        run: |
-          spctl --assess --type install -v "dist/macos/audio-tab-finder-host-${{ steps.version.outputs.version }}-macos-universal.pkg"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-pkg
-          path: dist/macos/*.pkg
-
   build-linux:
     name: Build Linux ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
@@ -171,7 +87,7 @@ jobs:
 
   release:
     name: Create GitHub Release
-    needs: [build-macos, build-linux, build-windows]
+    needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -182,7 +98,7 @@ jobs:
       - name: Generate SHA256 sums
         run: |
           cd artifacts
-          find . -type f \( -name '*.pkg' -o -name '*.deb' -o -name '*.rpm' -o -name '*.tar.gz' -o -name '*.zip' \) -print0 \
+          find . -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.tar.gz' -o -name '*.zip' \) -print0 \
             | xargs -0 shasum -a 256 \
             | sed 's|./[^/]*/||' \
             > SHA256SUMS.txt
@@ -191,7 +107,7 @@ jobs:
       - name: Move all artifacts to one dir
         run: |
           mkdir -p release
-          find artifacts -type f \( -name '*.pkg' -o -name '*.deb' -o -name '*.rpm' -o -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} release/ \;
+          find artifacts -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} release/ \;
           cp artifacts/SHA256SUMS.txt release/
 
       - name: Create Release
@@ -201,3 +117,11 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref, '-') }}
           generate_release_notes: true
+          body: |
+            ## Installation
+
+            **macOS:** the signed `.pkg` is uploaded manually a few minutes after this release is published. If it's not visible yet, please check back shortly.
+
+            **Linux / Windows:** see assets below.
+
+            See the [README](https://github.com/FrancisGregori/audio-tab-finder#installation) for detailed install instructions per platform.
