@@ -10,7 +10,6 @@ HOST_DIR="${ROOT}/native-host"
 DIST_DIR="${ROOT}/dist/macos"
 STAGING="${DIST_DIR}/staging"
 BIN_DIR="${STAGING}/Library/Application Support/AudioTabFinder"
-COMPONENT_PKG="${DIST_DIR}/audio-tab-finder-host-component.pkg"
 FINAL_PKG="${DIST_DIR}/audio-tab-finder-host-${VERSION}-macos-universal.pkg"
 
 mkdir -p "${BIN_DIR}"
@@ -84,27 +83,26 @@ else
   echo "WARNING: MACOS_CERT_APP_NAME not set; skipping codesign (dev build only)"
 fi
 
-echo ">>> Building component .pkg"
+echo ">>> Building signed .pkg via pkgbuild"
+# We use pkgbuild --sign directly (instead of pkgbuild → productbuild --sign)
+# because productbuild --sign hung indefinitely on Apple's RFC3161 timestamp
+# server in CI (verified 100% rate across multiple runs). pkgbuild is a
+# different binary / different code path and signs successfully. The trade-off
+# is losing the distribution.xml customization (custom title, README dialog,
+# min-OS version check); we accept that for a simple single-component install.
 cd "${ROOT}"
-pkgbuild \
-  --root "${STAGING}" \
-  --identifier "${BUNDLE_ID}" \
-  --version "${VERSION}" \
-  --scripts "packaging/macos" \
-  --install-location "/" \
-  "${COMPONENT_PKG}"
-
-echo ">>> Building distribution .pkg"
-PRODUCTBUILD_ARGS=(
-  --distribution "packaging/macos/distribution.xml"
-  --resources "packaging/macos"
-  --package-path "${DIST_DIR}"
-  "${FINAL_PKG}"
+PKGBUILD_ARGS=(
+  --root "${STAGING}"
+  --identifier "${BUNDLE_ID}"
+  --version "${VERSION}"
+  --scripts "packaging/macos"
+  --install-location "/"
 )
 if [ -n "${MACOS_CERT_INSTALLER_NAME:-}" ]; then
-  PRODUCTBUILD_ARGS+=(--sign "${MACOS_CERT_INSTALLER_NAME}")
+  PKGBUILD_ARGS+=(--sign "${MACOS_CERT_INSTALLER_NAME}")
 fi
+PKGBUILD_ARGS+=("${FINAL_PKG}")
 
-retry productbuild "${PRODUCTBUILD_ARGS[@]}"
+retry pkgbuild "${PKGBUILD_ARGS[@]}"
 
 echo ">>> Done: ${FINAL_PKG}"
