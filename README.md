@@ -104,43 +104,75 @@ After install, reload the extension at `chrome://extensions`.
 > extension. Instead of an installer, you'll run a PowerShell script. The
 > script is plain text and can be inspected before running.
 
+##### Step 1 — Download and extract
+
 1. Download `audio-tab-finder-host-X.Y.Z-windows-amd64.zip` from
    [Releases](https://github.com/FrancisGregori/audio-tab-finder/releases/latest).
-2. **Extract the ZIP into a folder** (don't run `install.ps1` from inside the ZIP).
-3. Right-click `install.ps1` and select **Run with PowerShell**.
-4. If PowerShell shows a security prompt about untrusted scripts, type `Y`.
-5. Wait for the "Done" message.
-6. Reload the extension at `chrome://extensions`.
+2. **Extract the ZIP into a real folder** (right-click the ZIP → "Extract All").
+   Do NOT run `install.ps1` from inside the unopened ZIP — Windows will
+   silently refuse.
 
-##### Windows troubleshooting
+##### Step 2 — Run the installer
 
-**If "Run with PowerShell" does nothing or fails silently** (Windows
-blocked the script via Mark-of-the-Web or execution policy):
+You have two options. Try Option A first; if Windows blocks it, use Option B.
 
-1. Open **PowerShell** from the Start menu.
-2. `cd` into the folder where you extracted the ZIP, e.g.:
+**Option A — GUI (right-click)**
+
+1. Right-click `install.ps1` and select **Run with PowerShell**.
+2. If PowerShell shows a security prompt about untrusted scripts, type `Y`.
+3. Wait for the "Done" message.
+
+If nothing happens, or the window closes instantly with no output, Windows
+blocked the script (most common reason: Mark-of-the-Web flag from the ZIP
+download, or the system execution policy). Use Option B instead.
+
+**Option B — PowerShell command line (recommended fallback)**
+
+This always works because it bypasses the execution policy explicitly.
+
+1. Open **PowerShell** from the Start menu (regular, NOT "as Administrator").
+2. Navigate to the folder you extracted in Step 1, for example:
    ```powershell
    cd "$env:USERPROFILE\Downloads\audio-tab-finder-host-2.0.0-windows-amd64"
    ```
-3. Run the script with execution policy bypass:
+3. Run:
    ```powershell
    PowerShell -ExecutionPolicy Bypass -File .\install.ps1
    ```
+4. Wait for the "Done" message.
 
-**If you're running a "Load unpacked" / dev-mode extension** (instead of
-the Chrome Web Store version): by default the installer scans your local
-Chrome profiles and authorizes any "Audio Tab Finder" extension it finds
-— including unpacked dev builds. So this should usually just work.
+##### Step 3 — Reload the extension
 
-If your extension still can't talk to the helper after install, get the
-extension ID from `chrome://extensions` (under "Audio Tab Finder"), then
-run the installer with that ID explicitly:
+Open `chrome://extensions` and click the reload icon on the Audio Tab Finder
+card. The popup banner about installing the helper should disappear within
+a few seconds.
 
-```powershell
-PowerShell -ExecutionPolicy Bypass -File .\install.ps1 -ExtensionId abcdef0123456789...
-```
+##### Special case — running a "Load unpacked" / dev-mode extension
 
-Then reload the extension at `chrome://extensions`.
+If you installed the extension via the **"Load unpacked"** option in
+`chrome://extensions` (instead of from the Chrome Web Store), Chrome assigns
+a **random extension ID** that is different from the published Chrome Web
+Store ID.
+
+**The good news:** the installer in v2.0.1+ already auto-detects this. When
+you run `install.ps1`, it scans your local Chrome profiles for any installed
+"Audio Tab Finder" extension and authorizes its ID automatically — including
+unpacked dev builds.
+
+**If for some reason auto-detection misses your install** (e.g. you use a
+non-standard Chrome user-data directory, or you load the unpacked extension
+*after* running the installer), do the following:
+
+1. Open `chrome://extensions` and copy the ID shown under "Audio Tab Finder".
+2. Re-run the installer with the ID passed explicitly:
+   ```powershell
+   PowerShell -ExecutionPolicy Bypass -File .\install.ps1 -ExtensionId <your-id-here>
+   ```
+3. Reload the extension at `chrome://extensions`.
+
+> Internally this writes your extension ID into the
+> `allowed_origins` array of `%LOCALAPPDATA%\AudioTabFinder\com.fgregori.audio_tab_finder.json`.
+> If you ever need to verify or edit it manually, that's the file.
 
 ### Verify the install worked
 
