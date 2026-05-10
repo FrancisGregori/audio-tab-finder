@@ -3,10 +3,33 @@ package watcher
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/FrancisGregori/audio-tab-finder/native-host/internal/store"
 	"github.com/fsnotify/fsnotify"
 )
+
+// readActionWithRetry reads an action file, retrying on transient errors.
+// On Windows, ReadDirectoryChangesW can fire a Create event before the file
+// is fully readable (file system flush, antivirus scan briefly locks the
+// file, etc.). Without retry, those actions are silently lost — which the
+// user sees as cross-profile mute/navigate/close that "sometimes" doesn't
+// fire. Five attempts × 30ms = up to 150ms total wait, which is well below
+// the 5s action TTL and imperceptible to the user.
+func readActionWithRetry(path string) (store.Action, error) {
+	var (
+		a   store.Action
+		err error
+	)
+	for i := 0; i < 5; i++ {
+		a, err = store.ReadAction(path)
+		if err == nil {
+			return a, nil
+		}
+		time.Sleep(30 * time.Millisecond)
+	}
+	return a, err
+}
 
 type Watcher struct {
 	dir        string
@@ -65,7 +88,7 @@ func (w *Watcher) handleEvent(ev fsnotify.Event) {
 	if !strings.HasSuffix(name, ".json") || strings.HasSuffix(name, ".tmp") {
 		return
 	}
-	a, err := store.ReadAction(name)
+	a, err := readActionWithRetry(name)
 	if err != nil {
 		return
 	}

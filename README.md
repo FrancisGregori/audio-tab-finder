@@ -106,11 +106,41 @@ After install, reload the extension at `chrome://extensions`.
 
 1. Download `audio-tab-finder-host-X.Y.Z-windows-amd64.zip` from
    [Releases](https://github.com/FrancisGregori/audio-tab-finder/releases/latest).
-2. Extract the ZIP.
+2. **Extract the ZIP into a folder** (don't run `install.ps1` from inside the ZIP).
 3. Right-click `install.ps1` and select **Run with PowerShell**.
 4. If PowerShell shows a security prompt about untrusted scripts, type `Y`.
 5. Wait for the "Done" message.
 6. Reload the extension at `chrome://extensions`.
+
+##### Windows troubleshooting
+
+**If "Run with PowerShell" does nothing or fails silently** (Windows
+blocked the script via Mark-of-the-Web or execution policy):
+
+1. Open **PowerShell** from the Start menu.
+2. `cd` into the folder where you extracted the ZIP, e.g.:
+   ```powershell
+   cd "$env:USERPROFILE\Downloads\audio-tab-finder-host-2.0.0-windows-amd64"
+   ```
+3. Run the script with execution policy bypass:
+   ```powershell
+   PowerShell -ExecutionPolicy Bypass -File .\install.ps1
+   ```
+
+**If you're running a "Load unpacked" / dev-mode extension** (instead of
+the Chrome Web Store version): by default the installer scans your local
+Chrome profiles and authorizes any "Audio Tab Finder" extension it finds
+— including unpacked dev builds. So this should usually just work.
+
+If your extension still can't talk to the helper after install, get the
+extension ID from `chrome://extensions` (under "Audio Tab Finder"), then
+run the installer with that ID explicitly:
+
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\install.ps1 -ExtensionId abcdef0123456789...
+```
+
+Then reload the extension at `chrome://extensions`.
 
 ### Verify the install worked
 
