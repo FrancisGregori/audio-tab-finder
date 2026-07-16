@@ -27,6 +27,7 @@ zip -r "${OUTPUT}" . \
   -x '.claude/*' \
   -x '.idea/*' \
   -x 'dist/*' \
+  -x 'Archive/*' \
   -x '*.zip' \
   -x 'BUILDING.md' \
   -x 'STORE_LISTING.md' \
