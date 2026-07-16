@@ -106,5 +106,17 @@
   "hostBannerQuestionOutdated": {
     "message": "Atualizacao disponivel",
     "description": "Question shown in the collapsed popup banner when host is outdated"
+  },
+  "supportButtonAria": {
+    "message": "Apoie o desenvolvedor - Me pague um cafe (abre em nova aba)",
+    "description": "Accessible label and tooltip for the Buy Me a Coffee button in the popup footer"
+  },
+  "supportMessage": {
+    "message": "Curtindo a extensao?",
+    "description": "Short prompt shown above the Buy Me a Coffee button in the popup footer"
+  },
+  "supportDismissAria": {
+    "message": "Ocultar por um mes",
+    "description": "Accessible label and tooltip for the dismiss button of the support footer"
   }
 }

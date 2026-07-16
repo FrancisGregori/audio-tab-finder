@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
   initializeI18n();
+  await initSupportFooter();
   await loadAndRender();
   setupKeyboardNavigation();
 });
@@ -12,6 +13,36 @@ function initializeI18n() {
   document.getElementById('empty-message').textContent = chrome.i18n.getMessage('noAudioAnywhere');
   document.getElementById('other-profiles-header').textContent = chrome.i18n.getMessage('otherProfilesHeader');
   document.getElementById('own-empty').textContent = chrome.i18n.getMessage('thisProfileSilent');
+  document.getElementById('support-message').textContent = chrome.i18n.getMessage('supportMessage');
+  const bmcButton = document.getElementById('bmc-button');
+  bmcButton.setAttribute('aria-label', chrome.i18n.getMessage('supportButtonAria'));
+  bmcButton.title = chrome.i18n.getMessage('supportButtonAria');
+  const dismissBtn = document.getElementById('support-dismiss');
+  dismissBtn.setAttribute('aria-label', chrome.i18n.getMessage('supportDismissAria'));
+  dismissBtn.title = chrome.i18n.getMessage('supportDismissAria');
+}
+
+const SUPPORT_REMIND_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+const SUPPORT_MAX_DISMISSALS = 3;
+
+async function initSupportFooter() {
+  const footer = document.getElementById('support-footer');
+  const stored = await chrome.storage.local.get(['supportDismissedAt', 'supportDismissCount']);
+  const dismissedAt = stored.supportDismissedAt;
+  const dismissCount = typeof stored.supportDismissCount === 'number' ? stored.supportDismissCount : 0;
+  const dismissedForever = dismissCount >= SUPPORT_MAX_DISMISSALS;
+  const recentlyDismissed =
+    typeof dismissedAt === 'number' && Date.now() - dismissedAt < SUPPORT_REMIND_AFTER_MS;
+  if (!dismissedForever && !recentlyDismissed) {
+    footer.classList.remove('hidden');
+  }
+  document.getElementById('support-dismiss').addEventListener('click', async () => {
+    footer.classList.add('hidden');
+    await chrome.storage.local.set({
+      supportDismissedAt: Date.now(),
+      supportDismissCount: dismissCount + 1,
+    });
+  });
 }
 
 async function loadAndRender() {

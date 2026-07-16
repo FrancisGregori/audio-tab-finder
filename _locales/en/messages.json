@@ -106,5 +106,17 @@
   "hostBannerQuestionOutdated": {
     "message": "Update available",
     "description": "Question shown in the collapsed popup banner when host is outdated"
+  },
+  "supportButtonAria": {
+    "message": "Support the developer - Buy me a coffee (opens a new tab)",
+    "description": "Accessible label and tooltip for the Buy Me a Coffee button in the popup footer"
+  },
+  "supportMessage": {
+    "message": "Enjoying the extension?",
+    "description": "Short prompt shown above the Buy Me a Coffee button in the popup footer"
+  },
+  "supportDismissAria": {
+    "message": "Hide for a month",
+    "description": "Accessible label and tooltip for the dismiss button of the support footer"
   }
 }

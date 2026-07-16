@@ -65,6 +65,9 @@ makes no network connections. The macOS installer is signed and notarized
 by Apple. Linux and Windows builds are reproducible from public source via
 GitHub Actions.
 
+☕ Enjoying Audio Tab Finder? Support the project:
+https://buymeacoffee.com/francisgregori
+
 ## Category
 Productivity
 
@@ -90,6 +93,7 @@ Audio Tab Finder does not collect, store, or transmit any user data. The extensi
 
 ### Support
 For issues or feature requests, please visit our GitHub repository.
+If you'd like to support development: https://buymeacoffee.com/francisgregori
 
 ---
 
