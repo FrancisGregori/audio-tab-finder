@@ -38,7 +38,15 @@ async function handleActionRequest(msg) {
         success = true;
         break;
       default:
-        errorMessage = 'unknown action: ' + msg.action;
+        // volume:NN — the value rides the action string because the native
+        // host's Action struct has fixed fields, and adding one would force
+        // every user to reinstall the helper.
+        if (typeof msg.action === 'string' && msg.action.startsWith(VOLUME_ACTION_PREFIX)) {
+          await applyRemoteVolumeAction(msg.action, msg.target_tab_id);
+          success = true;
+        } else {
+          errorMessage = 'unknown action: ' + msg.action;
+        }
     }
   } catch (e) {
     errorMessage = (e && e.message) || String(e);

@@ -69,7 +69,15 @@
   },
   "muteOthers": {
     "message": "Silenciar as outras abas",
-    "description": "Tooltip for the solo button on a tab row"
+    "description": "Label of the solo action inside a tab's control panel"
+  },
+  "muteOthersHint": {
+    "message": "Silencia todas as outras abas com audio, em todos os perfis, e ativa o som desta",
+    "description": "Tooltip expanding on what the solo action does"
+  },
+  "rowControlsLabel": {
+    "message": "Volume e controles",
+    "description": "Tooltip for the button that expands a tab's control panel"
   },
   "muteAllThisProfile": {
     "message": "Silenciar todas as abas deste perfil",
@@ -144,6 +152,13 @@
   "volumeAria": {
     "message": "Volume da aba",
     "description": "ARIA label for the per-tab volume slider"
+  },
+  "volumeRemoteNote": {
+    "message": "Requer que $PROFILE$ tenha o controle de volume ativado.",
+    "description": "Note under the slider when adjusting a tab that belongs to another Chrome profile",
+    "placeholders": {
+      "profile": { "content": "$1", "example": "Pessoal" }
+    }
   },
   "volumeUnavailable": {
     "message": "Controle de volume nao disponivel nesta aba",

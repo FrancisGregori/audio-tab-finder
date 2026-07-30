@@ -2,6 +2,7 @@ importScripts(
   'profile.js',
   'host-connection.js',
   'state-sync.js',
+  'volume.js',
   'action-handler.js',
   'popup-bridge.js'
 );

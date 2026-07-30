@@ -63,6 +63,16 @@ async function removeTab(tab, isOwnProfile, ownerProfileUuid) {
   if (!ok) throw new Error('send_action failed');
 }
 
+async function setRemoteTabVolume(tab, ownerProfileUuid, percent) {
+  const ok = await sendProfileAction({
+    profileUuid: ownerProfileUuid,
+    action: VOLUME_ACTION_PREFIX + Math.round(percent),
+    targetTabId: tab.tab_id,
+    targetWindowId: tab.window_id,
+  });
+  if (!ok) throw new Error('send_action failed');
+}
+
 async function focusTab(tab, isOwnProfile, ownerProfileUuid) {
   if (isOwnProfile) {
     await chrome.tabs.update(tab.tab_id, { active: true });

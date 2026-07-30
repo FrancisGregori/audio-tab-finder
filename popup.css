@@ -300,17 +300,16 @@ h1::before {
 .tab-url { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; margin-top: 2px; }
 
-.volume-btn, .solo-btn, .mute-btn, .close-btn {
+.volume-btn, .mute-btn, .close-btn {
   width: 26px; height: 26px; padding: 0; border: none; background-color: transparent;
   color: #888; cursor: pointer; border-radius: 6px; display: flex; align-items: center;
   justify-content: center; transition: all 0.2s ease; flex-shrink: 0;
 }
-.volume-btn, .solo-btn, .mute-btn { margin-right: 2px; }
+.volume-btn, .mute-btn { margin-right: 2px; }
 .volume-btn:hover, .volume-btn--active { background-color: #7c3aed; color: #fff; }
-.solo-btn:hover { background-color: #0891b2; color: #fff; }
 .mute-btn:hover { background-color: #3b82f6; color: #fff; }
 .close-btn:hover { background-color: #e74c3c; color: #fff; }
-.volume-btn svg, .solo-btn svg, .mute-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.volume-btn svg, .mute-btn svg { width: 16px; height: 16px; fill: currentColor; }
 .close-btn svg { width: 16px; height: 16px; }
 
 /* Volume panel — expands under its tab row, reading as one card with it */
@@ -318,12 +317,44 @@ h1::before {
 
 .volume-panel {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
   padding: 8px 12px;
   background-color: #101a30;
   border-radius: 0 0 8px 8px;
 }
+
+.volume-panel__row { display: flex; align-items: center; gap: 8px; }
+
+.volume-panel__note {
+  font-size: 10px;
+  line-height: 1.4;
+  color: #666;
+}
+
+/* Labelled actions in the panel — the things no 16px icon can express */
+.volume-panel__action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 4px;
+  margin-top: 2px;
+  border: none;
+  border-top: 1px solid #1a2740;
+  border-radius: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  color: #b0b0b0;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.volume-panel__action:hover { color: #fff; }
+.volume-panel__action:focus-visible { outline: 2px solid #4ade80; outline-offset: -2px; }
+.volume-panel__action-icon { width: 14px; height: 14px; flex-shrink: 0; display: flex; }
+.volume-panel__action-icon svg { width: 14px; height: 14px; fill: currentColor; }
 
 .volume-panel__icon { width: 14px; height: 14px; flex-shrink: 0; color: #888; }
 .volume-panel__icon svg { width: 14px; height: 14px; fill: currentColor; }
@@ -409,11 +440,10 @@ h1::before {
 /* Focus styles */
 .tab-item:focus { outline: 2px solid #4ade80; outline-offset: -2px; background-color: #1f4068; }
 .tab-item:focus-visible { outline: 2px solid #4ade80; outline-offset: -2px; }
-.volume-btn:focus, .solo-btn:focus, .mute-btn:focus, .close-btn:focus {
+.volume-btn:focus, .mute-btn:focus, .close-btn:focus {
   outline: 2px solid #4ade80; outline-offset: 2px;
 }
-.volume-btn:focus-visible, .solo-btn:focus-visible,
-.mute-btn:focus-visible, .close-btn:focus-visible {
+.volume-btn:focus-visible, .mute-btn:focus-visible, .close-btn:focus-visible {
   outline: 2px solid #4ade80; outline-offset: 2px;
 }
 
