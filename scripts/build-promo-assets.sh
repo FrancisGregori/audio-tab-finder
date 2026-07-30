@@ -44,18 +44,22 @@ for host in youtube.com open.spotify.com netflix.com twitch.tv soundcloud.com; d
     || { echo "ERROR: could not fetch favicon for ${host}" >&2; exit 1; }
 done
 
-# Render the popup itself at 3x, then trim the transparent area below it. The
-# container paints its own background, so trimming stops at its edge and the
-# 16px padding survives.
+# Render the popup itself at 3x on a magenta page, then trim that magenta away.
+# The sentinel colour matters: trimming against transparency made ImageMagick
+# take its reference from the container's own corner pixel and strip the
+# container's padding too, so raising .container's padding changed nothing in
+# the output. Magenta appears nowhere in the popup, so the trim can only remove
+# page background.
 echo "Rendering popup frames…"
 node "${ROOT}/scripts/promo/gen-frames.js"
 for frame in list profiles bulk volume pause; do
   "${CHROME}" --headless --disable-gpu --hide-scrollbars --no-sandbox \
     --force-device-scale-factor=3 --window-size=380,900 \
-    --default-background-color=00000000 \
+    --default-background-color=ffff00ff \
     --screenshot="${PROMO_WORK}/shots/raw-${frame}.png" \
     "file://${PROMO_WORK}/frames/${frame}.html" >/dev/null 2>&1
-  magick "${PROMO_WORK}/shots/raw-${frame}.png" -trim +repage \
+  magick "${PROMO_WORK}/shots/raw-${frame}.png" \
+    -bordercolor '#ff00ff' -border 1 -trim +repage -alpha off \
     "${PROMO_WORK}/shots/${frame}.png"
 done
 

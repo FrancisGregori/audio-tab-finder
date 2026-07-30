@@ -58,7 +58,10 @@ const BASE_CSS = `
   }
   .sub { font-size: 21px; line-height: 1.5; color: #a7aec4; max-width: 22ch; }
 
-  /* the popup shown the way it actually appears: hanging off the toolbar */
+  /* Toolbar and popup read as one object, the way they do on screen. They were
+     briefly split apart to buy the title some air; the real culprit was the
+     trim eating the popup's padding, so the split only made the bar look
+     detached. */
   .browser { width: var(--w); filter: drop-shadow(0 34px 70px rgba(0,0,0,0.62)); }
   .toolbar {
     height: 46px;

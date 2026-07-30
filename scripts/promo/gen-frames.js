@@ -94,7 +94,11 @@ const shell = (body) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <link rel="stylesheet" href="file://${ROOT}/popup.css">
 <style>
-  html, body { background: transparent; }
+  /* A colour the popup never uses, so the trim step has an unambiguous
+     reference. Trimming against transparency took the corner pixel from the
+     container itself and stripped its padding along with the empty area,
+     which silently cancelled out any change to .container's padding. */
+  html, body { background: #ff00ff; }
   body { width: 380px; }
   /* Chrome renders a native range track headlessly; pin the fill so the
      slider reads at a glance the way it does in the live popup. */
