@@ -197,6 +197,11 @@ function renderProfileHeader(profiles) {
   const own = getOwnProfile(profiles);
   const label = (own && own.label) || '';
 
+  // The name and its pencil belong together on the left; the right edge is
+  // reserved for actions, the way every other row in the popup works.
+  const nameGroup = document.createElement('div');
+  nameGroup.className = 'profile-header__name';
+
   const icon = makeProfileHeaderIcon();
 
   const text = document.createElement('span');
@@ -218,10 +223,6 @@ function renderProfileHeader(profiles) {
     }
   });
 
-  const suffix = document.createElement('span');
-  suffix.className = 'profile-header__suffix';
-  suffix.textContent = chrome.i18n.getMessage('thisProfileSuffix');
-
   const editBtn = document.createElement('button');
   editBtn.type = 'button';
   editBtn.className = 'profile-header__edit-btn';
@@ -234,10 +235,20 @@ function renderProfileHeader(profiles) {
   `;
   editBtn.addEventListener('click', () => enterLabelEditMode(label));
 
-  header.appendChild(icon);
-  header.appendChild(text);
-  header.appendChild(suffix);
-  header.appendChild(editBtn);
+  nameGroup.appendChild(icon);
+  nameGroup.appendChild(text);
+  nameGroup.appendChild(editBtn);
+  header.appendChild(nameGroup);
+
+  if (hasAnyTabs(profiles)) {
+    header.appendChild(
+      makeBulkControls(
+        { kind: 'own' },
+        chrome.i18n.getMessage('muteAllThisProfile'),
+        chrome.i18n.getMessage('unmuteAllThisProfile')
+      )
+    );
+  }
 }
 
 function makeProfileHeaderIcon() {
@@ -319,11 +330,21 @@ function enterLabelEditMode(currentLabel) {
 function renderGlobalBulk(profiles) {
   const container = document.getElementById('global-bulk');
   container.innerHTML = '';
-  if (!hasAnyTabs(profiles)) {
+
+  // With only this profile making noise, the header's own pair already is the
+  // global pair — a second identical one would just be noise.
+  const othersHaveTabs = getOtherProfiles(profiles).some((p) => p.tabs && p.tabs.length > 0);
+  if (!othersHaveTabs) {
     container.classList.add('hidden');
     return;
   }
   container.classList.remove('hidden');
+
+  const label = document.createElement('span');
+  label.className = 'bulk-controls__label';
+  label.textContent = chrome.i18n.getMessage('allProfilesLabel');
+  container.appendChild(label);
+
   appendBulkButtons(
     container,
     { kind: 'global' },

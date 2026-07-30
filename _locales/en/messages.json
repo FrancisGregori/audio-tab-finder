@@ -71,6 +71,18 @@
     "message": "Mute all other tabs",
     "description": "Tooltip for the solo button on a tab row"
   },
+  "muteAllThisProfile": {
+    "message": "Mute all tabs in this profile",
+    "description": "Tooltip for mute-all on the current profile's header"
+  },
+  "unmuteAllThisProfile": {
+    "message": "Unmute all tabs in this profile",
+    "description": "Tooltip for unmute-all on the current profile's header"
+  },
+  "allProfilesLabel": {
+    "message": "All",
+    "description": "Small label next to the global mute/unmute pair by the popup title"
+  },
   "muteAllEverywhere": {
     "message": "Mute all tabs everywhere",
     "description": "Tooltip for the global mute-all button next to the popup title"

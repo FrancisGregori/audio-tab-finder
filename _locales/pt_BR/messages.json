@@ -71,6 +71,18 @@
     "message": "Silenciar as outras abas",
     "description": "Tooltip for the solo button on a tab row"
   },
+  "muteAllThisProfile": {
+    "message": "Silenciar todas as abas deste perfil",
+    "description": "Tooltip for mute-all on the current profile's header"
+  },
+  "unmuteAllThisProfile": {
+    "message": "Ativar som de todas as abas deste perfil",
+    "description": "Tooltip for unmute-all on the current profile's header"
+  },
+  "allProfilesLabel": {
+    "message": "Tudo",
+    "description": "Small label next to the global mute/unmute pair by the popup title"
+  },
   "muteAllEverywhere": {
     "message": "Silenciar todas as abas em todos os perfis",
     "description": "Tooltip for the global mute-all button next to the popup title"

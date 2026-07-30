@@ -53,23 +53,25 @@ h1::before {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 8px 10px 8px 12px;
   background-color: #16213e;
   border-radius: 8px;
   margin-bottom: 12px;
   min-height: 36px;
 }
+.profile-header__name {
+  display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;
+}
 .profile-header__icon { width: 16px; height: 16px; flex-shrink: 0; color: #888;
   display: flex; align-items: center; justify-content: center; }
 .profile-header__icon svg { width: 16px; height: 16px; fill: currentColor; }
 .profile-header__text {
-  flex: 1; min-width: 0; font-size: 13px; font-weight: 500; color: #eaeaea;
+  flex: 0 1 auto; min-width: 0; font-size: 13px; font-weight: 500; color: #eaeaea;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
 }
 .profile-header__text--empty { color: #888; font-style: italic; font-weight: 400; }
-.profile-header__suffix { color: #888; font-size: 12px; font-weight: 400; margin-left: 4px; }
 .profile-header__edit-btn, .profile-header__save-btn {
-  width: 24px; height: 24px; border: none; background-color: transparent; color: #888;
+  width: 22px; height: 22px; border: none; background-color: transparent; color: #666;
   cursor: pointer; border-radius: 4px; display: flex; align-items: center;
   justify-content: center; transition: all 0.2s ease; flex-shrink: 0; padding: 0;
 }
@@ -236,6 +238,15 @@ h1::before {
 }
 
 .bulk-controls.hidden { display: none; }
+
+.bulk-controls__label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+  margin-right: 2px;
+}
 
 .bulk-btn {
   width: 26px;
