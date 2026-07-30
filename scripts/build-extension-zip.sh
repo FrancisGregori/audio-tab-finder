@@ -22,6 +22,7 @@ zip -r "${OUTPUT}" . \
   -x 'scripts/*' \
   -x 'packaging/*' \
   -x 'docs/*' \
+  -x 'promo/*' \
   -x '.github/*' \
   -x '.git/*' \
   -x '.claude/*' \
