@@ -199,4 +199,28 @@ fs.writeFileSync(path.join(OUT, 'tile-marquee.html'), page(1400, 560, `
   <div class="art">${browser('profiles', 372, '2/4')}</div>
 `));
 
+// --------------------------------------------------------------- YouTube thumb
+// Sized 1280x720 for YouTube, but composed to survive the ~210px wide version
+// people actually scan: three words at 96px, one product shot, nothing else.
+
+fs.writeFileSync(path.join(OUT, 'thumb-youtube.html'), page(1280, 720, `
+  .stage { display: grid; grid-template-columns: 1fr auto; align-items: center;
+           gap: 40px; padding: 0 62px; }
+  .copy { display: flex; flex-direction: column; gap: 22px; max-width: 560px; }
+  .chip {
+    align-self: flex-start;
+    font-size: 19px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #0d1a12; background: #4ade80; padding: 7px 14px; border-radius: 7px;
+  }
+  h2 { font-size: 96px; line-height: 0.98; letter-spacing: -0.042em; font-weight: 800; }
+  .stage::after { background-image: repeating-linear-gradient(
+      to bottom, rgba(255,255,255,0.03) 0 1px, transparent 1px 58px); }
+`, `
+  <div class="copy">
+    <span class="chip">Chrome Extension</span>
+    <h2>Find the tab making noise</h2>
+  </div>
+  <div class="art">${browser('list', 396, '3')}</div>
+`));
+
 console.log('promo pages:', fs.readdirSync(OUT).filter((f) => f.endsWith('.html')).join(', '));

@@ -79,8 +79,9 @@ shoot() {
 }
 
 for name in 1-find 2-profiles 3-bulk 4-volume 5-pause; do shoot "${name}" 1280 800; done
-shoot tile-small   440 280
-shoot tile-marquee 1400 560
+shoot tile-small     440 280
+shoot tile-marquee  1400 560
+shoot thumb-youtube 1280 720   # thumbnail for the demo video on YouTube
 
 echo ""
 echo "Built ${OUT}:"
