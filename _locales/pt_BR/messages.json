@@ -67,6 +67,84 @@
     "message": "Fechar aba",
     "description": "Tooltip for close button"
   },
+  "muteOthers": {
+    "message": "Silenciar as outras abas",
+    "description": "Tooltip for the solo button on a tab row"
+  },
+  "muteAllEverywhere": {
+    "message": "Silenciar todas as abas em todos os perfis",
+    "description": "Tooltip for the global mute-all button next to the popup title"
+  },
+  "unmuteAllEverywhere": {
+    "message": "Ativar som de todas as abas em todos os perfis",
+    "description": "Tooltip for the global unmute-all button next to the popup title"
+  },
+  "muteAllThisWindow": {
+    "message": "Silenciar todas as abas desta janela",
+    "description": "Tooltip for mute-all on the 'This window' group header"
+  },
+  "unmuteAllThisWindow": {
+    "message": "Ativar som de todas as abas desta janela",
+    "description": "Tooltip for unmute-all on the 'This window' group header"
+  },
+  "muteAllOtherWindows": {
+    "message": "Silenciar todas as abas das outras janelas",
+    "description": "Tooltip for mute-all on the 'Other windows' group header"
+  },
+  "unmuteAllOtherWindows": {
+    "message": "Ativar som de todas as abas das outras janelas",
+    "description": "Tooltip for unmute-all on the 'Other windows' group header"
+  },
+  "muteAllInProfile": {
+    "message": "Silenciar todas as abas em $PROFILE$",
+    "description": "Tooltip for mute-all on another profile's heading",
+    "placeholders": {
+      "profile": { "content": "$1", "example": "Pessoal" }
+    }
+  },
+  "unmuteAllInProfile": {
+    "message": "Ativar som de todas as abas em $PROFILE$",
+    "description": "Tooltip for unmute-all on another profile's heading",
+    "placeholders": {
+      "profile": { "content": "$1", "example": "Pessoal" }
+    }
+  },
+  "thisWindowHeader": {
+    "message": "Esta janela",
+    "description": "Header for the group of audio tabs in the window the popup was opened from"
+  },
+  "otherWindowsHeader": {
+    "message": "Outras janelas",
+    "description": "Header for the group of audio tabs in this profile's other windows"
+  },
+  "nothingToMuteToast": {
+    "message": "Nada para silenciar",
+    "description": "Toast shown when a mute-all found no tab to act on"
+  },
+  "nothingToUnmuteToast": {
+    "message": "Nada para ativar",
+    "description": "Toast shown when an unmute-all found no tab to act on"
+  },
+  "volumeLabel": {
+    "message": "Volume",
+    "description": "Tooltip for the button that opens a tab's volume slider"
+  },
+  "volumeAria": {
+    "message": "Volume da aba",
+    "description": "ARIA label for the per-tab volume slider"
+  },
+  "volumeUnavailable": {
+    "message": "Controle de volume nao disponivel nesta aba",
+    "description": "Shown when the tab has no media element the extension can reach"
+  },
+  "volumePermissionBody": {
+    "message": "O controle de volume precisa de permissao para ajustar a midia da pagina.",
+    "description": "Explanation shown before requesting the optional permission for volume control"
+  },
+  "volumePermissionButton": {
+    "message": "Ativar controle de volume",
+    "description": "Button that triggers the optional permission request for volume control"
+  },
   "switchToTab": {
     "message": "Ir para aba",
     "description": "Tooltip for clicking on a tab item"

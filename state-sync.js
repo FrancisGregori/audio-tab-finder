@@ -1,21 +1,33 @@
 const HEARTBEAT_INTERVAL_MS = 20_000;
+const STATE_SYNC_DEBOUNCE_MS = 150;
 
 let _stateSyncProfileUuid = null;
 let _stateSyncHeartbeatHandle = null;
+let _stateSyncDebounceHandle = null;
 
 function setupStateSync(profileUuid) {
   _stateSyncProfileUuid = profileUuid;
 
   chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
     if (changeInfo.audible !== undefined || changeInfo.mutedInfo !== undefined) {
-      sendCurrentState();
+      scheduleStateSync();
     }
   });
 
-  chrome.tabs.onRemoved.addListener(() => sendCurrentState());
+  chrome.tabs.onRemoved.addListener(() => scheduleStateSync());
 
   startHeartbeat();
   sendCurrentState();
+}
+
+// A bulk mute fires one onUpdated per tab. Coalesce the burst into a single
+// push instead of rewriting the state file once per tab.
+function scheduleStateSync() {
+  if (_stateSyncDebounceHandle !== null) clearTimeout(_stateSyncDebounceHandle);
+  _stateSyncDebounceHandle = setTimeout(() => {
+    _stateSyncDebounceHandle = null;
+    sendCurrentState();
+  }, STATE_SYNC_DEBOUNCE_MS);
 }
 
 function startHeartbeat() {

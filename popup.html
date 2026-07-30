@@ -8,11 +8,14 @@
 </head>
 <body>
   <div class="container" role="main" aria-label="Audio Tab Finder">
-    <h1 id="popup-title"></h1>
+    <div class="title-row">
+      <h1 id="popup-title"></h1>
+      <div id="global-bulk" class="bulk-controls hidden"></div>
+    </div>
     <div id="profile-header" class="profile-header" aria-live="polite"></div>
     <div id="host-banner" class="host-banner hidden" role="status"></div>
     <div id="own-tabs-section" class="tabs-section">
-      <div id="own-tabs-list" role="list" aria-label="Tabs playing audio in this profile"></div>
+      <div id="own-groups"></div>
       <div id="own-empty" class="own-empty hidden"></div>
     </div>
     <div id="other-profiles-section" class="other-section hidden">
@@ -43,6 +46,8 @@
     </div>
     <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
   </div>
+  <script src="popup-actions.js"></script>
+  <script src="popup-volume.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

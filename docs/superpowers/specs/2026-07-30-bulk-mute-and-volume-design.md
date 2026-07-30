@@ -86,7 +86,7 @@ Three new values for the existing `action` string field, handled by `action-hand
 
 `mute_others` reuses the `TargetTabId` field already present in `store.Action`, so the Go structs are untouched.
 
-**Backward compatibility:** a profile still running extension v2.0.x hits the `default:` branch of `handleActionRequest` and replies `unknown action: mute_all`. The source profile surfaces the existing `actionFailedToast`. Degradation is visible and harmless. There is no mechanism to detect the peer's extension version (the state file schema is fixed by the Go structs), so the controls are always shown and failure is reported after the fact.
+**Backward compatibility:** a profile still running extension v2.0.x hits the `default:` branch of `handleActionRequest` and replies `unknown action: mute_all`. That reply does not reach the sender — `handleActionResult` in the host only deletes the action file and ignores `success`, and `send_action` is acknowledged as soon as the file is written. So the failure is not reported as a toast; it shows up as tabs that stay unmuted after the list refreshes. This is the same guarantee the existing per-tab cross-profile mute has always had. There is also no way to detect a peer's extension version (the state file schema is fixed by the Go structs), so the controls are always shown.
 
 ### Solo semantics
 
@@ -220,12 +220,12 @@ The entire `native-host/` tree. This is the point of encoding bulk operations as
 | `volumeUnavailable` | Volume control is not available on this tab |
 | `volumePermissionBody` | Volume control needs permission to adjust media on the page. |
 | `volumePermissionButton` | Enable volume control |
-| `mutedCountToast` | Muted $COUNT$ tabs |
-| `unmutedCountToast` | Unmuted $COUNT$ tabs |
 | `nothingToMuteToast` | Nothing to mute |
 | `nothingToUnmuteToast` | Nothing to unmute |
 
 `pt_BR` values follow the existing accent-free convention ("audio", not "áudio").
+
+A bulk operation shows **no** success toast. The toast is `position: fixed` over the bottom of the list for three seconds; firing it on every bulk click would cover the very rows the user is looking at. The list re-rendering with flipped icons is the feedback. Only the two "nothing matched" cases speak up, because there the UI would otherwise appear not to have reacted at all.
 
 ## Keyboard
 

@@ -67,6 +67,84 @@
     "message": "Close tab",
     "description": "Tooltip for close button"
   },
+  "muteOthers": {
+    "message": "Mute all other tabs",
+    "description": "Tooltip for the solo button on a tab row"
+  },
+  "muteAllEverywhere": {
+    "message": "Mute all tabs everywhere",
+    "description": "Tooltip for the global mute-all button next to the popup title"
+  },
+  "unmuteAllEverywhere": {
+    "message": "Unmute all tabs everywhere",
+    "description": "Tooltip for the global unmute-all button next to the popup title"
+  },
+  "muteAllThisWindow": {
+    "message": "Mute all tabs in this window",
+    "description": "Tooltip for mute-all on the 'This window' group header"
+  },
+  "unmuteAllThisWindow": {
+    "message": "Unmute all tabs in this window",
+    "description": "Tooltip for unmute-all on the 'This window' group header"
+  },
+  "muteAllOtherWindows": {
+    "message": "Mute all tabs in other windows",
+    "description": "Tooltip for mute-all on the 'Other windows' group header"
+  },
+  "unmuteAllOtherWindows": {
+    "message": "Unmute all tabs in other windows",
+    "description": "Tooltip for unmute-all on the 'Other windows' group header"
+  },
+  "muteAllInProfile": {
+    "message": "Mute all tabs in $PROFILE$",
+    "description": "Tooltip for mute-all on another profile's heading",
+    "placeholders": {
+      "profile": { "content": "$1", "example": "Personal" }
+    }
+  },
+  "unmuteAllInProfile": {
+    "message": "Unmute all tabs in $PROFILE$",
+    "description": "Tooltip for unmute-all on another profile's heading",
+    "placeholders": {
+      "profile": { "content": "$1", "example": "Personal" }
+    }
+  },
+  "thisWindowHeader": {
+    "message": "This window",
+    "description": "Header for the group of audio tabs in the window the popup was opened from"
+  },
+  "otherWindowsHeader": {
+    "message": "Other windows",
+    "description": "Header for the group of audio tabs in this profile's other windows"
+  },
+  "nothingToMuteToast": {
+    "message": "Nothing to mute",
+    "description": "Toast shown when a mute-all found no tab to act on"
+  },
+  "nothingToUnmuteToast": {
+    "message": "Nothing to unmute",
+    "description": "Toast shown when an unmute-all found no tab to act on"
+  },
+  "volumeLabel": {
+    "message": "Volume",
+    "description": "Tooltip for the button that opens a tab's volume slider"
+  },
+  "volumeAria": {
+    "message": "Tab volume",
+    "description": "ARIA label for the per-tab volume slider"
+  },
+  "volumeUnavailable": {
+    "message": "Volume control is not available on this tab",
+    "description": "Shown when the tab has no media element the extension can reach"
+  },
+  "volumePermissionBody": {
+    "message": "Volume control needs permission to adjust the media on the page.",
+    "description": "Explanation shown before requesting the optional permission for volume control"
+  },
+  "volumePermissionButton": {
+    "message": "Enable volume control",
+    "description": "Button that triggers the optional permission request for volume control"
+  },
   "switchToTab": {
     "message": "Switch to tab",
     "description": "Tooltip for clicking on a tab item"

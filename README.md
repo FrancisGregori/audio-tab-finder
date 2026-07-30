@@ -9,8 +9,23 @@ across all your Chrome profiles.
 - **Cross-profile detection and control** via an optional native helper
 - **Quick navigation** — click to jump to any tab instantly
 - **Mute/unmute and close** tabs without leaving your current tab
+- **Mute all / unmute all** scoped to this window, other windows, one profile, or everything
+- **Mute all but this tab** — one click to solo whatever you actually want to hear
+- **Per-tab volume** (0–100%), behind an optional permission you grant only when you use it
 - **Fast** — sub-second cross-profile actions
 - **Local only** — no cloud, no telemetry, no remote servers
+
+### Keyboard shortcuts (inside the popup)
+
+| Key | Action |
+|---|---|
+| `↑` `↓` `Home` `End` | Move between tabs |
+| `Enter` / `Space` | Switch to the focused tab |
+| `m` | Mute/unmute the focused tab |
+| `s` | Mute every tab except the focused one |
+| `v` | Open the focused tab's volume slider |
+| `Delete` / `Backspace` | Close the focused tab |
+| `Shift+M` / `Shift+U` | Mute / unmute everything, in every profile |
 
 ## Installation
 
@@ -206,6 +221,17 @@ The extension requests:
 - **`tabs`** — to detect audio playback and tab metadata
 - **`storage`** — to remember a profile label and UUID per Chrome profile
 - **`nativeMessaging`** — to communicate with the optional native helper
+
+Two further permissions are declared **optional**. They are not part of the
+install prompt and are never requested until you press "Enable volume control"
+on a tab's volume slider:
+
+- **`scripting`** — to set the volume on the page's `<audio>`/`<video>` elements
+- **`<all_urls>`** — required by `scripting`, and needed because the player is
+  often inside a cross-origin iframe (an embedded video on a blog). Nothing on
+  the page is ever read or sent anywhere.
+
+If you never use the volume slider, the extension never asks for either one.
 
 The native helper makes no network connections — all communication is
 local between Chrome and the helper via standard input/output.
