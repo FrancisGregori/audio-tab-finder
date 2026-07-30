@@ -9,8 +9,43 @@ across all your Chrome profiles.
 - **Cross-profile detection and control** via an optional native helper
 - **Quick navigation** — click to jump to any tab instantly
 - **Mute/unmute and close** tabs without leaving your current tab
+- **Mute all / unmute all** scoped to this window, other windows, one profile, or everything
+- **Mute all but this tab** — silences the rest so you hear only what you want
+- **Per-tab volume** (0–100%), including tabs in other profiles
+- **Pause playback**, not just mute — paused tabs stay in the list so you can resume them
 - **Fast** — sub-second cross-profile actions
 - **Local only** — no cloud, no telemetry, no remote servers
+
+Volume and pause sit behind an optional permission you grant only when you first
+use them. See [Permissions](#permissions).
+
+### Keyboard shortcuts (inside the popup)
+
+| Key | Action |
+|---|---|
+| `↑` `↓` `Home` `End` | Move between tabs |
+| `Enter` / `Space` | Switch to the focused tab |
+| `m` | Mute/unmute the focused tab |
+| `s` | Mute every tab except the focused one |
+| `p` | Pause/resume the focused tab |
+| `v` | Open the focused tab's control panel |
+| `Delete` / `Backspace` | Close the focused tab |
+| `Shift+M` / `Shift+U` | Mute / unmute everything, in every profile |
+
+### What needs the native helper
+
+|  | Without the helper | With the helper |
+|---|---|---|
+| Find, mute, close, jump to tabs | this profile | every profile |
+| Mute all / unmute all / solo | this profile | every profile |
+| Volume | this profile | every profile¹ |
+| Pause / resume | this profile | this profile² |
+
+¹ The slider can set the level in another profile but cannot read the current one
+back, so it opens at whatever you last set. That profile also needs to have
+enabled volume control itself.
+² Cross-profile pause would need a newer helper; a paused tab stops being audible
+and would drop out of the other profile's list with no way to resume it.
 
 ## Installation
 
@@ -206,6 +241,18 @@ The extension requests:
 - **`tabs`** — to detect audio playback and tab metadata
 - **`storage`** — to remember a profile label and UUID per Chrome profile
 - **`nativeMessaging`** — to communicate with the optional native helper
+
+Two further permissions are declared **optional**. They are not part of the
+install prompt and are never requested until you press "Enable volume control"
+in a tab's control panel:
+
+- **`scripting`** — to set the volume on, or pause, the page's `<audio>`/`<video>`
+  elements
+- **`<all_urls>`** — required by `scripting`, and needed because the player is
+  often inside a cross-origin iframe (an embedded video on a blog). Nothing on
+  the page is ever read or sent anywhere.
+
+If you never use volume or pause, the extension never asks for either one.
 
 The native helper makes no network connections — all communication is
 local between Chrome and the helper via standard input/output.

@@ -3,7 +3,7 @@ html { background: transparent; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  min-width: 340px;
+  min-width: 380px;
   max-width: 420px;
   background: transparent;
   color: #eaeaea;
@@ -15,14 +15,22 @@ body {
   overflow: hidden;
 }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 h1 {
   font-size: 18px;
   font-weight: 600;
-  margin-bottom: 12px;
   color: #fff;
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 h1::before {
@@ -45,23 +53,25 @@ h1::before {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 8px 10px 8px 12px;
   background-color: #16213e;
   border-radius: 8px;
   margin-bottom: 12px;
   min-height: 36px;
 }
+.profile-header__name {
+  display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;
+}
 .profile-header__icon { width: 16px; height: 16px; flex-shrink: 0; color: #888;
   display: flex; align-items: center; justify-content: center; }
 .profile-header__icon svg { width: 16px; height: 16px; fill: currentColor; }
 .profile-header__text {
-  flex: 1; min-width: 0; font-size: 13px; font-weight: 500; color: #eaeaea;
+  flex: 0 1 auto; min-width: 0; font-size: 13px; font-weight: 500; color: #eaeaea;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
 }
 .profile-header__text--empty { color: #888; font-style: italic; font-weight: 400; }
-.profile-header__suffix { color: #888; font-size: 12px; font-weight: 400; margin-left: 4px; }
 .profile-header__edit-btn, .profile-header__save-btn {
-  width: 24px; height: 24px; border: none; background-color: transparent; color: #888;
+  width: 22px; height: 22px; border: none; background-color: transparent; color: #666;
   cursor: pointer; border-radius: 4px; display: flex; align-items: center;
   justify-content: center; transition: all 0.2s ease; flex-shrink: 0; padding: 0;
 }
@@ -183,13 +193,80 @@ h1::before {
   padding: 0 4px;
 }
 
-/* Sub-profile heading inside other profiles */
-.other-profile-heading {
+/* Group header — window subgroups and other-profile headings, each carrying
+   its own mute-all / unmute-all pair */
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px 0;
+  padding: 0 4px;
+}
+
+.group-header__label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-header--window .group-header__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+}
+
+.group-header--profile .group-header__label {
   font-size: 12px;
   font-weight: 500;
   color: #b0b0b0;
-  margin: 8px 0 4px 4px;
 }
+
+.group-header:first-child {
+  margin-top: 0;
+}
+
+/* Bulk mute / unmute controls */
+.bulk-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.bulk-controls.hidden { display: none; }
+
+.bulk-controls__label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+  margin-right: 2px;
+}
+
+.bulk-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  color: #888;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.bulk-btn svg { width: 15px; height: 15px; fill: currentColor; }
+.bulk-btn--mute:hover { background-color: #3b82f6; color: #fff; }
+.bulk-btn--unmute:hover { background-color: #16a34a; color: #fff; }
+.bulk-btn:focus-visible { outline: 2px solid #4ade80; outline-offset: 2px; }
 
 /* Own profile silent line */
 .own-empty {
@@ -201,42 +278,164 @@ h1::before {
 }
 
 /* Tab item — shared between own and cross-profile */
+.tab-entry { margin-bottom: 8px; }
+.tab-entry:last-child { margin-bottom: 0; }
+
 .tab-item {
   display: flex; align-items: center;
   padding: 10px 12px;
   background-color: #16213e;
   border-radius: 8px;
-  margin-bottom: 8px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 .tab-item:hover { background-color: #1f4068; }
-.tab-item:last-child { margin-bottom: 0; }
 .tab-item--cross { background-color: #14203a; }
 .tab-item--cross:hover { background-color: #1d3859; }
 
-.tab-favicon { width: 20px; height: 20px; margin-right: 12px; border-radius: 4px; flex-shrink: 0; }
-.tab-info { flex: 1; min-width: 0; margin-right: 8px; }
+/* Paused: still listed so it can be resumed, but visibly not playing */
+.tab-item--paused { background-color: #131c30; }
+.tab-item--paused:hover { background-color: #1b2949; }
+.tab-item--paused .tab-title { color: #9aa4b8; }
+.tab-item--paused .tab-favicon { opacity: 0.55; }
+
+.tab-favicon { width: 20px; height: 20px; margin-right: 10px; border-radius: 4px; flex-shrink: 0; }
+.tab-info { flex: 1; min-width: 0; margin-right: 6px; }
 .tab-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; color: #fff; }
 .tab-url { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; margin-top: 2px; }
 
-.mute-btn, .close-btn {
-  width: 28px; height: 28px; border: none; background-color: transparent; color: #888;
-  cursor: pointer; border-radius: 6px; display: flex; align-items: center;
+.volume-btn, .mute-btn, .resume-btn, .close-btn {
+  width: 26px; height: 26px; padding: 0; border: none; background-color: transparent;
+  color: #888; cursor: pointer; border-radius: 6px; display: flex; align-items: center;
   justify-content: center; transition: all 0.2s ease; flex-shrink: 0;
 }
-.mute-btn { margin-right: 4px; }
+.volume-btn, .mute-btn, .resume-btn { margin-right: 2px; }
+.volume-btn:hover, .volume-btn--active { background-color: #7c3aed; color: #fff; }
 .mute-btn:hover { background-color: #3b82f6; color: #fff; }
-.mute-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.resume-btn { color: #4ade80; }
+.resume-btn:hover { background-color: #16a34a; color: #fff; }
 .close-btn:hover { background-color: #e74c3c; color: #fff; }
+.volume-btn svg, .mute-btn svg, .resume-btn svg { width: 16px; height: 16px; fill: currentColor; }
 .close-btn svg { width: 16px; height: 16px; }
+
+/* Volume panel — expands under its tab row, reading as one card with it */
+.tab-entry:has(.volume-panel) .tab-item { border-radius: 8px 8px 0 0; }
+
+.volume-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #101a30;
+  border-radius: 0 0 8px 8px;
+}
+
+.volume-panel__row { display: flex; align-items: center; gap: 8px; }
+
+.volume-panel__note {
+  font-size: 10px;
+  line-height: 1.4;
+  color: #666;
+}
+
+/* Labelled actions in the panel — the things no 16px icon can express */
+.volume-panel__action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 4px;
+  margin-top: 2px;
+  border: none;
+  border-top: 1px solid #1a2740;
+  border-radius: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  color: #b0b0b0;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.volume-panel__action:hover { color: #fff; }
+.volume-panel__action:focus-visible { outline: 2px solid #4ade80; outline-offset: -2px; }
+.volume-panel__action-icon { width: 14px; height: 14px; flex-shrink: 0; display: flex; }
+.volume-panel__action-icon svg { width: 14px; height: 14px; fill: currentColor; }
+
+.volume-panel__icon { width: 14px; height: 14px; flex-shrink: 0; color: #888; }
+.volume-panel__icon svg { width: 14px; height: 14px; fill: currentColor; }
+
+.volume-panel__value {
+  font-size: 11px;
+  color: #b0b0b0;
+  min-width: 34px;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.volume-panel__slider {
+  flex: 1;
+  min-width: 0;
+  height: 4px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #1f4068;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.volume-panel__slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #4ade80;
+  cursor: pointer;
+}
+
+.volume-panel__slider:disabled { cursor: not-allowed; opacity: 0.5; }
+.volume-panel__slider:disabled::-webkit-slider-thumb { background-color: #888; cursor: not-allowed; }
+.volume-panel__slider:focus-visible { outline: 2px solid #4ade80; outline-offset: 4px; }
+
+.volume-panel__notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.volume-panel__notice p {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #b0b0b0;
+}
+
+.volume-panel__grant {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0f1626;
+  background-color: #4ade80;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.volume-panel__grant:hover { filter: brightness(1.08); }
+.volume-panel__grant:focus-visible { outline: 2px solid #4ade80; outline-offset: 2px; }
 
 .empty-state { text-align: center; padding: 32px 16px; color: #888; }
 .empty-state p { font-size: 14px; }
 
-.audio-indicator { width: 16px; height: 16px; margin-right: 8px; flex-shrink: 0; }
+.audio-indicator { width: 16px; height: 16px; margin-right: 6px; flex-shrink: 0; }
 .audio-indicator svg { width: 16px; height: 16px; fill: #4ade80; }
 .audio-indicator.muted svg { fill: #888; }
 
@@ -249,8 +448,13 @@ h1::before {
 /* Focus styles */
 .tab-item:focus { outline: 2px solid #4ade80; outline-offset: -2px; background-color: #1f4068; }
 .tab-item:focus-visible { outline: 2px solid #4ade80; outline-offset: -2px; }
-.mute-btn:focus, .close-btn:focus { outline: 2px solid #4ade80; outline-offset: 2px; }
-.mute-btn:focus-visible, .close-btn:focus-visible { outline: 2px solid #4ade80; outline-offset: 2px; }
+.volume-btn:focus, .mute-btn:focus, .resume-btn:focus, .close-btn:focus {
+  outline: 2px solid #4ade80; outline-offset: 2px;
+}
+.volume-btn:focus-visible, .mute-btn:focus-visible,
+.resume-btn:focus-visible, .close-btn:focus-visible {
+  outline: 2px solid #4ade80; outline-offset: 2px;
+}
 
 /* Toast */
 .toast {
