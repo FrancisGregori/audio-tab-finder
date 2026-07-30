@@ -535,10 +535,12 @@ function createTabElement(tab, isOwnProfile, ownerProfileUuid) {
 
   const favicon = document.createElement('img');
   favicon.className = 'tab-favicon';
-  favicon.src = tab.favicon_url || 'icons/icon16.png';
+  // The 48 is the tiled artwork; scaled into the 20px favicon slot it reads as
+  // a site icon, which the bare toolbar glyph does not.
+  favicon.src = tab.favicon_url || 'icons/icon48.png';
   favicon.alt = '';
   favicon.setAttribute('aria-hidden', 'true');
-  favicon.onerror = () => { favicon.src = 'icons/icon16.png'; };
+  favicon.onerror = () => { favicon.src = 'icons/icon48.png'; };
 
   const audioIndicator = document.createElement('div');
   audioIndicator.className = 'audio-indicator' + (tab.muted || tab.paused ? ' muted' : '');
