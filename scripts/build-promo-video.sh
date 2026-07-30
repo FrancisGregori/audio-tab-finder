@@ -52,13 +52,20 @@ node "${ROOT}/scripts/promo/gen-video.js"
 echo "Capturing frames…"
 FPS="${FPS}" node "${ROOT}/scripts/promo/capture.js"
 
+echo "Synthesising the backing track…"
+# Generated from oscillators rather than downloaded, so there is no licence to
+# honour and nothing that can be claimed against the video later.
+python3 "${ROOT}/scripts/promo/gen-music.py" "${PROMO_WORK}/music.wav" 27.0
+
 echo "Encoding…"
 # yuv420p and the even-dimension filter keep it playable everywhere; faststart
 # puts the index up front so it streams rather than waiting for a full download.
 ffmpeg -y -loglevel error \
   -framerate "${FPS}" -i "${PROMO_WORK}/video-frames/%05d.png" \
+  -i "${PROMO_WORK}/music.wav" \
   -c:v libx264 -preset slow -crf 18 \
-  -pix_fmt yuv420p -movflags +faststart \
+  -c:a aac -b:a 192k -ac 2 \
+  -pix_fmt yuv420p -movflags +faststart -shortest \
   -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
   "${OUT}/demo.mp4"
 
