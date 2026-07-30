@@ -75,6 +75,34 @@
     "message": "Silences every other tab with audio, in every profile, and unmutes this one",
     "description": "Tooltip expanding on what the solo action does"
   },
+  "pauseTab": {
+    "message": "Pause playback",
+    "description": "Label of the pause action inside a tab's control panel"
+  },
+  "pauseTabHint": {
+    "message": "Stops the audio or video in this tab. Unlike mute, playback does not keep running.",
+    "description": "Tooltip expanding on what pausing does"
+  },
+  "resumeTab": {
+    "message": "Resume playback",
+    "description": "Tooltip for the play button on a paused tab row"
+  },
+  "pausedLabel": {
+    "message": "Paused",
+    "description": "Shown in place of the site name on a tab we paused"
+  },
+  "nothingToPauseToast": {
+    "message": "Nothing is playing in this tab",
+    "description": "Toast shown when pausing found no playing media element"
+  },
+  "pauseNeedsPermission": {
+    "message": "Pausing needs the same permission as volume control. Enable it in the panel first.",
+    "description": "Toast shown when pausing is attempted before the optional permission is granted"
+  },
+  "resumeFailedToast": {
+    "message": "Could not resume. Press play in the tab itself.",
+    "description": "Toast shown when the browser refused to restart playback"
+  },
   "rowControlsLabel": {
     "message": "Volume and controls",
     "description": "Tooltip for the button that expands a tab's control panel"

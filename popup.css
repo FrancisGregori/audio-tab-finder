@@ -293,6 +293,12 @@ h1::before {
 .tab-item--cross { background-color: #14203a; }
 .tab-item--cross:hover { background-color: #1d3859; }
 
+/* Paused: still listed so it can be resumed, but visibly not playing */
+.tab-item--paused { background-color: #131c30; }
+.tab-item--paused:hover { background-color: #1b2949; }
+.tab-item--paused .tab-title { color: #9aa4b8; }
+.tab-item--paused .tab-favicon { opacity: 0.55; }
+
 .tab-favicon { width: 20px; height: 20px; margin-right: 10px; border-radius: 4px; flex-shrink: 0; }
 .tab-info { flex: 1; min-width: 0; margin-right: 6px; }
 .tab-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden;
@@ -300,16 +306,18 @@ h1::before {
 .tab-url { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; margin-top: 2px; }
 
-.volume-btn, .mute-btn, .close-btn {
+.volume-btn, .mute-btn, .resume-btn, .close-btn {
   width: 26px; height: 26px; padding: 0; border: none; background-color: transparent;
   color: #888; cursor: pointer; border-radius: 6px; display: flex; align-items: center;
   justify-content: center; transition: all 0.2s ease; flex-shrink: 0;
 }
-.volume-btn, .mute-btn { margin-right: 2px; }
+.volume-btn, .mute-btn, .resume-btn { margin-right: 2px; }
 .volume-btn:hover, .volume-btn--active { background-color: #7c3aed; color: #fff; }
 .mute-btn:hover { background-color: #3b82f6; color: #fff; }
+.resume-btn { color: #4ade80; }
+.resume-btn:hover { background-color: #16a34a; color: #fff; }
 .close-btn:hover { background-color: #e74c3c; color: #fff; }
-.volume-btn svg, .mute-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.volume-btn svg, .mute-btn svg, .resume-btn svg { width: 16px; height: 16px; fill: currentColor; }
 .close-btn svg { width: 16px; height: 16px; }
 
 /* Volume panel — expands under its tab row, reading as one card with it */
@@ -440,10 +448,11 @@ h1::before {
 /* Focus styles */
 .tab-item:focus { outline: 2px solid #4ade80; outline-offset: -2px; background-color: #1f4068; }
 .tab-item:focus-visible { outline: 2px solid #4ade80; outline-offset: -2px; }
-.volume-btn:focus, .mute-btn:focus, .close-btn:focus {
+.volume-btn:focus, .mute-btn:focus, .resume-btn:focus, .close-btn:focus {
   outline: 2px solid #4ade80; outline-offset: 2px;
 }
-.volume-btn:focus-visible, .mute-btn:focus-visible, .close-btn:focus-visible {
+.volume-btn:focus-visible, .mute-btn:focus-visible,
+.resume-btn:focus-visible, .close-btn:focus-visible {
   outline: 2px solid #4ade80; outline-offset: 2px;
 }
 

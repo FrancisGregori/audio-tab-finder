@@ -23,8 +23,9 @@ Audio Tab Finder is your new best friend. One click shows you EXACTLY which tabs
 - **See all audio tabs at a glance** - A clean list showing every tab currently playing sound
 - **Jump to any tab instantly** - Click on a tab to switch to it immediately
 - **Mute or unmute anything** - One tab, one window, every other window, one profile, or absolutely everything
-- **Mute all but this one** - The "solo" button silences the rest so you hear only what you want
+- **Mute all but this one** - Silences the rest so you hear only what you want
 - **Set the volume per tab** - A real 0-100% slider for each tab, not just mute
+- **Pause it, don't just mute it** - Stop the playback for real; paused tabs stay in the list so you can resume them
 - **Close noisy tabs directly** - Hit the X button without even visiting the tab
 - **Badge counter** - See how many tabs are playing audio right on the extension icon
 - **Works everywhere** - YouTube, Spotify, random websites with autoplay videos... we catch them all
@@ -49,22 +50,25 @@ Audio Tab Finder is your new best friend. One click shows you EXACTLY which tabs
 
 *Made with frustration and determination by someone who had way too many tabs open.*
 
-## NEW in v2.1: Bulk mute controls and per-tab volume
+## NEW in v2.1: Bulk mute, per-tab volume, and pause
 
 You asked, we built it. The popup now does a lot more than list tabs:
 
 - Mute all / unmute all, with the scope you actually mean: this window,
   every other window, one specific Chrome profile, or everything at once.
-- "Mute all others" on any tab - one click to hear only that one.
+- "Mute all other tabs" - hear only the one you care about.
 - A volume slider for each tab, 0 to 100%, independent of mute.
+- Pause playback for real. Muting leaves the video running; pausing stops
+  it. Paused tabs stay in the list with a play button so you can pick them
+  back up.
 
-Keyboard: m mutes the selected tab, s solos it, v opens its volume,
-Shift+M and Shift+U mute and unmute everything.
+Keyboard: m mutes the selected tab, s silences everything else, p pauses
+it, v opens its controls, Shift+M and Shift+U mute and unmute everything.
 
-Volume control is the only feature that needs extra access, so it is
+Volume and pause are the only features that need extra access, so it is
 optional: nothing is requested at install time, and the extension only
-asks the first time you press "Enable volume control". If you never touch
-the slider, it never asks.
+asks the first time you press "Enable volume control". If you never use
+them, it never asks.
 
 ## NEW in v2.0: Cross-profile audio detection
 
@@ -140,5 +144,5 @@ If asked to justify permissions during the Chrome Web Store review:
 
 Optional permissions (declared as `optional_permissions` / `optional_host_permissions`, never requested at install time):
 
-- **`scripting`** (optional): Used only for the per-tab volume feature. When the user moves a tab's volume slider, the extension injects a short function that sets the `volume` property on that page's `<audio>` and `<video>` elements. Chrome provides no API for tab volume, only mute, so this is the only way to offer the feature. Nothing is read from the page and nothing is transmitted.
-- **`<all_urls>`** (optional host permission): Required by `scripting` above, and requested only the first time the user presses "Enable volume control" in the popup. It applies to all sites because the media element is frequently inside a cross-origin iframe (for example an embedded YouTube player on a blog), and each frame needs its own permission. The extension never reads page content, never injects on page load, and never contacts a server. Users who do not use the volume slider are never prompted.
+- **`scripting`** (optional): Used only for the per-tab volume and pause features. When the user moves a tab's volume slider or presses pause, the extension injects a short function that sets the `volume` property on, or calls `pause()`/`play()` on, that page's `<audio>` and `<video>` elements. Chrome provides no API for tab volume or playback, only mute, so this is the only way to offer these features. Nothing is read from the page and nothing is transmitted.
+- **`<all_urls>`** (optional host permission): Required by `scripting` above, and requested only the first time the user presses "Enable volume control" in the popup. It applies to all sites because the media element is frequently inside a cross-origin iframe (for example an embedded YouTube player on a blog), and each frame needs its own permission. The extension never reads page content, never injects on page load, and never contacts a server. Users who do not use volume or pause are never prompted.

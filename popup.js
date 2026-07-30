@@ -18,6 +18,8 @@ const VOLUME_DEBOUNCE_MS = 60;
 const ICON_SPEAKER = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
 const ICON_SPEAKER_MUTED = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`;
 const ICON_TUNE = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>`;
+const ICON_PAUSE = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+const ICON_PLAY = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
 
 let _profiles = [];
 let _currentWindowId = null;
@@ -61,9 +63,10 @@ async function initSupportFooter() {
 
 async function loadAndRender() {
   const focusedTabId = getFocusedTabId();
-  const [resp, windowId] = await Promise.all([
+  const [resp, windowId, pausedTabs] = await Promise.all([
     chrome.runtime.sendMessage({ type: 'get_aggregate' }),
     getCurrentWindowId(),
+    resolvePausedTabs(),
   ]);
   if (!resp || !resp.ok) {
     showToast((resp && resp.error) || 'failed to load');
@@ -71,6 +74,16 @@ async function loadAndRender() {
   }
   _profiles = resp.profiles || [];
   _currentWindowId = windowId;
+
+  // Paused tabs are silent, so the audible query misses them; they only stay
+  // reachable because we merge them back in here. The filter matters: `audible`
+  // stays true for a second or two after a pause, and the state file can be a
+  // beat behind, so without it a freshly paused tab shows up twice.
+  const own = getOwnProfile(_profiles);
+  if (own && pausedTabs.length > 0) {
+    const pausedIds = new Set(pausedTabs.map((tab) => tab.tab_id));
+    own.tabs = (own.tabs || []).filter((tab) => !pausedIds.has(tab.tab_id)).concat(pausedTabs);
+  }
 
   renderHostBanner(resp.hostInstalled, resp.hostStatus);
   renderProfileHeader(_profiles);
@@ -512,7 +525,8 @@ function createTabElement(tab, isOwnProfile, ownerProfileUuid) {
   entry.setAttribute('role', 'listitem');
 
   const item = document.createElement('div');
-  item.className = 'tab-item' + (isOwnProfile ? '' : ' tab-item--cross');
+  item.className =
+    'tab-item' + (isOwnProfile ? '' : ' tab-item--cross') + (tab.paused ? ' tab-item--paused' : '');
   item.tabIndex = 0;
   item.setAttribute('data-tab-id', tab.tab_id);
   if (!isOwnProfile && ownerProfileUuid) {
@@ -527,9 +541,11 @@ function createTabElement(tab, isOwnProfile, ownerProfileUuid) {
   favicon.onerror = () => { favicon.src = 'icons/icon16.png'; };
 
   const audioIndicator = document.createElement('div');
-  audioIndicator.className = 'audio-indicator' + (tab.muted ? ' muted' : '');
+  audioIndicator.className = 'audio-indicator' + (tab.muted || tab.paused ? ' muted' : '');
   audioIndicator.setAttribute('aria-hidden', 'true');
-  audioIndicator.innerHTML = `
+  audioIndicator.innerHTML = tab.paused
+    ? ICON_PAUSE
+    : `
     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
       <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
     </svg>
@@ -543,7 +559,9 @@ function createTabElement(tab, isOwnProfile, ownerProfileUuid) {
   title.title = tab.title || '';
   const url = document.createElement('div');
   url.className = 'tab-url';
-  url.textContent = formatUrl(tab.url);
+  url.textContent = tab.paused
+    ? chrome.i18n.getMessage('pausedLabel') + ' · ' + formatUrl(tab.url)
+    : formatUrl(tab.url);
   url.title = tab.url || '';
   info.appendChild(title);
   info.appendChild(url);
@@ -551,14 +569,24 @@ function createTabElement(tab, isOwnProfile, ownerProfileUuid) {
   item.appendChild(favicon);
   item.appendChild(audioIndicator);
   item.appendChild(info);
-  item.appendChild(createVolumeButton(tab, entry, isOwnProfile, ownerProfileUuid));
-  item.appendChild(createMuteButton(tab, isOwnProfile, ownerProfileUuid, audioIndicator));
+
+  // A paused tab has nothing to mute and nothing to solo. Resuming is the one
+  // thing you want from it, so it gets the row to itself.
+  if (tab.paused) {
+    item.appendChild(createResumeButton(tab));
+  } else {
+    item.appendChild(createVolumeButton(tab, entry, isOwnProfile, ownerProfileUuid));
+    item.appendChild(createMuteButton(tab, isOwnProfile, ownerProfileUuid, audioIndicator));
+    // "Mute all other tabs" lives in the panel, where it can carry a text label
+    // — no 16px icon says "silence everything except this". The keyboard
+    // shortcut still reaches it, hence the handle on the element.
+    item._solo = () => runSolo(tab, isOwnProfile, ownerProfileUuid);
+  }
   item.appendChild(createCloseButton(tab, isOwnProfile, ownerProfileUuid, entry));
 
-  // "Mute all other tabs" lives in the panel, where it can carry a text label —
-  // no 16px icon says "silence everything except this". The keyboard shortcut
-  // still reaches it in one keystroke, hence the handle on the element.
-  item._solo = () => runSolo(tab, isOwnProfile, ownerProfileUuid);
+  if (isOwnProfile) {
+    item._togglePause = () => (tab.paused ? runResume(tab) : runPause(tab));
+  }
 
   item.addEventListener('click', (e) => {
     if (e.target.closest('button')) return;
@@ -612,6 +640,76 @@ async function runSolo(tab, isOwnProfile, ownerProfileUuid) {
   await refreshAfter(result.remoteSent > 0 || !isOwnProfile);
 }
 
+async function runPause(tab) {
+  if (!(await hasMediaPermission())) {
+    showToast(chrome.i18n.getMessage('pauseNeedsPermission'));
+    return;
+  }
+  try {
+    const changed = await setTabPaused(tab.tab_id, true);
+    if (changed === 0) {
+      showToast(chrome.i18n.getMessage('nothingToPauseToast'));
+      return;
+    }
+    await addPausedTabId(tab.tab_id);
+  } catch (e) {
+    showToast(chrome.i18n.getMessage('volumeUnavailable'));
+    return;
+  }
+  await loadAndRender();
+}
+
+async function runResume(tab) {
+  try {
+    await setTabPaused(tab.tab_id, false);
+  } catch (e) {
+    showToast(chrome.i18n.getMessage('resumeFailedToast'));
+  }
+  // Drop it from the paused set either way — leaving a tab we can no longer
+  // drive stuck in the list would be worse than losing track of it.
+  await removePausedTabId(tab.tab_id);
+  // `audible` needs a moment to come back; re-rendering immediately would blink
+  // the row out of the list until the next open.
+  await refreshAfter(true);
+}
+
+function createResumeButton(tab) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'resume-btn';
+  btn.setAttribute('aria-label', chrome.i18n.getMessage('resumeTab'));
+  btn.title = chrome.i18n.getMessage('resumeTab');
+  btn.innerHTML = ICON_PLAY;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    runResume(tab);
+  });
+  return btn;
+}
+
+function buildPauseButton(tab) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'volume-panel__action';
+  btn.title = chrome.i18n.getMessage('pauseTabHint');
+
+  const icon = document.createElement('span');
+  icon.className = 'volume-panel__action-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = ICON_PAUSE;
+
+  const label = document.createElement('span');
+  label.textContent = chrome.i18n.getMessage('pauseTab');
+
+  btn.appendChild(icon);
+  btn.appendChild(label);
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    runPause(tab);
+  });
+  return btn;
+}
+
 function buildSoloButton(tab, isOwnProfile, ownerProfileUuid) {
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -653,6 +751,7 @@ function createCloseButton(tab, isOwnProfile, ownerProfileUuid, entryEl) {
     entryEl.remove();
     const nextItem = neighbour && neighbour.querySelector ? neighbour.querySelector('.tab-item') : null;
     if (nextItem) nextItem.focus();
+    if (tab.paused) await removePausedTabId(tab.tab_id);
     try {
       await removeTab(tab, isOwnProfile, ownerProfileUuid);
     } catch (err) {
@@ -712,13 +811,17 @@ async function populateVolumePanel(tab, panel, isOwnProfile, ownerProfileUuid) {
   } else {
     await populateRemoteVolumePanel(tab, panel, ownerProfileUuid);
   }
-  // Solo needs no permission and no scripting, so it sits below whatever the
-  // volume half turned out to be — slider, notice, or unavailable.
+  // Pausing reaches into the page like volume does, so it is only offered for
+  // this profile's tabs. Solo needs neither permission nor scripting, so it is
+  // always here, below whatever the volume half turned out to be.
+  if (isOwnProfile) {
+    panel.appendChild(buildPauseButton(tab));
+  }
   panel.appendChild(buildSoloButton(tab, isOwnProfile, ownerProfileUuid));
 }
 
 async function populateOwnVolumePanel(tab, panel) {
-  if (!(await hasVolumePermission())) {
+  if (!(await hasMediaPermission())) {
     panel.appendChild(buildVolumePermissionNotice(tab, panel));
     return;
   }
@@ -830,7 +933,7 @@ function buildVolumePermissionNotice(tab, panel) {
     // prompt, so leave a note (fire-and-forget) that lands the next open back
     // on this row.
     rememberOpenVolumePanel(tab.tab_id);
-    requestVolumePermission().then(async (granted) => {
+    requestMediaPermission().then(async (granted) => {
       await forgetOpenVolumePanel();
       if (granted) await populateVolumePanel(tab, panel, true, null);
     });
@@ -934,6 +1037,13 @@ function setupKeyboardNavigation() {
       case 'v':
       case 'V':
         if (clickInRow(items, focused, '.volume-btn')) e.preventDefault();
+        break;
+      case 'p':
+      case 'P':
+        if (focused !== -1 && items[focused]._togglePause) {
+          e.preventDefault();
+          items[focused]._togglePause();
+        }
         break;
       case 'Delete':
       case 'Backspace':

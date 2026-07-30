@@ -75,6 +75,34 @@
     "message": "Silencia todas as outras abas com audio, em todos os perfis, e ativa o som desta",
     "description": "Tooltip expanding on what the solo action does"
   },
+  "pauseTab": {
+    "message": "Pausar reproducao",
+    "description": "Label of the pause action inside a tab's control panel"
+  },
+  "pauseTabHint": {
+    "message": "Para o audio ou video desta aba. Diferente do mudo, a reproducao nao continua correndo.",
+    "description": "Tooltip expanding on what pausing does"
+  },
+  "resumeTab": {
+    "message": "Retomar reproducao",
+    "description": "Tooltip for the play button on a paused tab row"
+  },
+  "pausedLabel": {
+    "message": "Pausado",
+    "description": "Shown in place of the site name on a tab we paused"
+  },
+  "nothingToPauseToast": {
+    "message": "Nada tocando nesta aba",
+    "description": "Toast shown when pausing found no playing media element"
+  },
+  "pauseNeedsPermission": {
+    "message": "Pausar precisa da mesma permissao do controle de volume. Ative no painel primeiro.",
+    "description": "Toast shown when pausing is attempted before the optional permission is granted"
+  },
+  "resumeFailedToast": {
+    "message": "Nao foi possivel retomar. De play na propria aba.",
+    "description": "Toast shown when the browser refused to restart playback"
+  },
   "rowControlsLabel": {
     "message": "Volume e controles",
     "description": "Tooltip for the button that expands a tab's control panel"
