@@ -10,9 +10,7 @@ body {
 }
 
 .container {
-  /* More headroom above the title than below the footer: the header sits hard
-     against the top edge of the popup, where 16px reads as cramped. */
-  padding: 24px 16px 16px;
+  padding: 16px;
   background-color: #1a1a2e;
   overflow: hidden;
 }
