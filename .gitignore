@@ -1,5 +1,7 @@
 # Build artifacts
 *.zip
+# Archive.zip extracted for inspection — the zip itself is already ignored
+Archive/
 
 # OS files
 .DS_Store
