@@ -8,11 +8,14 @@
 </head>
 <body>
   <div class="container" role="main" aria-label="Audio Tab Finder">
-    <h1 id="popup-title"></h1>
+    <div class="title-row">
+      <h1 id="popup-title"></h1>
+      <div id="global-bulk" class="bulk-controls hidden"></div>
+    </div>
     <div id="profile-header" class="profile-header" aria-live="polite"></div>
     <div id="host-banner" class="host-banner hidden" role="status"></div>
     <div id="own-tabs-section" class="tabs-section">
-      <div id="own-tabs-list" role="list" aria-label="Tabs playing audio in this profile"></div>
+      <div id="own-groups"></div>
       <div id="own-empty" class="own-empty hidden"></div>
     </div>
     <div id="other-profiles-section" class="other-section hidden">
@@ -22,8 +25,29 @@
     <div id="empty-state" class="empty-state hidden" role="status" aria-live="polite">
       <p id="empty-message"></p>
     </div>
+    <div id="support-footer" class="support-footer hidden">
+      <button id="support-dismiss" class="support-dismiss" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <p id="support-message" class="support-message"></p>
+      <a id="bmc-button" class="bmc-button" href="https://buymeacoffee.com/francisgregori" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+          <line x1="6" y1="1" x2="6" y2="4"/>
+          <line x1="10" y1="1" x2="10" y2="4"/>
+          <line x1="14" y1="1" x2="14" y2="4"/>
+        </svg>
+        <span>Buy me a coffee</span>
+      </a>
+    </div>
     <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
   </div>
+  <script src="media.js"></script>
+  <script src="popup-actions.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,30 +1,110 @@
 document.addEventListener('DOMContentLoaded', async () => {
   initializeI18n();
+  await initSupportFooter();
   await loadAndRender();
+  await restorePendingVolumePanel();
   setupKeyboardNavigation();
 });
 
 const HOST_INSTALL_URL = 'https://github.com/FrancisGregori/audio-tab-finder#installation';
 const HOST_RELEASES_URL = 'https://github.com/FrancisGregori/audio-tab-finder/releases/latest';
 
+// A cross-profile action is acknowledged as soon as the host writes the action
+// file, not when the other profile carries it out. Give it a beat before
+// re-reading, so the refreshed list reflects what actually happened.
+const REMOTE_ACTION_SETTLE_MS = 400;
+const VOLUME_DEBOUNCE_MS = 60;
+
+const ICON_SPEAKER = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
+const ICON_SPEAKER_MUTED = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`;
+const ICON_TUNE = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>`;
+const ICON_PAUSE = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+const ICON_PLAY = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
+
+let _profiles = [];
+let _currentWindowId = null;
+
 function initializeI18n() {
   document.getElementById('popup-title').textContent = chrome.i18n.getMessage('popupTitle');
   document.getElementById('empty-message').textContent = chrome.i18n.getMessage('noAudioAnywhere');
   document.getElementById('other-profiles-header').textContent = chrome.i18n.getMessage('otherProfilesHeader');
   document.getElementById('own-empty').textContent = chrome.i18n.getMessage('thisProfileSilent');
+  document.getElementById('support-message').textContent = chrome.i18n.getMessage('supportMessage');
+  const bmcButton = document.getElementById('bmc-button');
+  bmcButton.setAttribute('aria-label', chrome.i18n.getMessage('supportButtonAria'));
+  bmcButton.title = chrome.i18n.getMessage('supportButtonAria');
+  const dismissBtn = document.getElementById('support-dismiss');
+  dismissBtn.setAttribute('aria-label', chrome.i18n.getMessage('supportDismissAria'));
+  dismissBtn.title = chrome.i18n.getMessage('supportDismissAria');
+}
+
+const SUPPORT_REMIND_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+const SUPPORT_MAX_DISMISSALS = 3;
+
+async function initSupportFooter() {
+  const footer = document.getElementById('support-footer');
+  const stored = await chrome.storage.local.get(['supportDismissedAt', 'supportDismissCount']);
+  const dismissedAt = stored.supportDismissedAt;
+  const dismissCount = typeof stored.supportDismissCount === 'number' ? stored.supportDismissCount : 0;
+  const dismissedForever = dismissCount >= SUPPORT_MAX_DISMISSALS;
+  const recentlyDismissed =
+    typeof dismissedAt === 'number' && Date.now() - dismissedAt < SUPPORT_REMIND_AFTER_MS;
+  if (!dismissedForever && !recentlyDismissed) {
+    footer.classList.remove('hidden');
+  }
+  document.getElementById('support-dismiss').addEventListener('click', async () => {
+    footer.classList.add('hidden');
+    await chrome.storage.local.set({
+      supportDismissedAt: Date.now(),
+      supportDismissCount: dismissCount + 1,
+    });
+  });
 }
 
 async function loadAndRender() {
-  const resp = await chrome.runtime.sendMessage({ type: 'get_aggregate' });
+  const focusedTabId = getFocusedTabId();
+  const [resp, windowId, pausedTabs] = await Promise.all([
+    chrome.runtime.sendMessage({ type: 'get_aggregate' }),
+    getCurrentWindowId(),
+    resolvePausedTabs(),
+  ]);
   if (!resp || !resp.ok) {
     showToast((resp && resp.error) || 'failed to load');
     return;
   }
+  _profiles = resp.profiles || [];
+  _currentWindowId = windowId;
+
+  // Paused tabs are silent, so the audible query misses them; they only stay
+  // reachable because we merge them back in here. The filter matters: `audible`
+  // stays true for a second or two after a pause, and the state file can be a
+  // beat behind, so without it a freshly paused tab shows up twice.
+  const own = getOwnProfile(_profiles);
+  if (own && pausedTabs.length > 0) {
+    const pausedIds = new Set(pausedTabs.map((tab) => tab.tab_id));
+    own.tabs = (own.tabs || []).filter((tab) => !pausedIds.has(tab.tab_id)).concat(pausedTabs);
+  }
+
   renderHostBanner(resp.hostInstalled, resp.hostStatus);
-  renderProfileHeader(resp.profiles);
-  renderOwnProfileTabs(resp.profiles);
-  renderOtherProfiles(resp.profiles);
-  renderEmptyState(resp.profiles);
+  renderProfileHeader(_profiles);
+  renderGlobalBulk(_profiles);
+  renderOwnProfileTabs(_profiles);
+  renderOtherProfiles(_profiles);
+  renderEmptyState(_profiles);
+
+  restoreFocus(focusedTabId);
+}
+
+function getFocusedTabId() {
+  const active = document.activeElement;
+  const item = active && active.closest ? active.closest('.tab-item') : null;
+  return item ? item.getAttribute('data-tab-id') : null;
+}
+
+function restoreFocus(tabId) {
+  if (!tabId) return;
+  const item = document.querySelector(`.tab-item[data-tab-id="${CSS.escape(tabId)}"]`);
+  if (item) item.focus();
 }
 
 function renderHostBanner(hostInstalled, hostStatus) {
@@ -119,11 +199,20 @@ function getOtherProfiles(profiles) {
   return profiles.filter((p) => !p.is_self);
 }
 
+function hasAnyTabs(profiles) {
+  return profiles.some((p) => p.tabs && p.tabs.length > 0);
+}
+
 function renderProfileHeader(profiles) {
   const header = document.getElementById('profile-header');
   header.innerHTML = '';
   const own = getOwnProfile(profiles);
   const label = (own && own.label) || '';
+
+  // The name and its pencil belong together on the left; the right edge is
+  // reserved for actions, the way every other row in the popup works.
+  const nameGroup = document.createElement('div');
+  nameGroup.className = 'profile-header__name';
 
   const icon = makeProfileHeaderIcon();
 
@@ -146,10 +235,6 @@ function renderProfileHeader(profiles) {
     }
   });
 
-  const suffix = document.createElement('span');
-  suffix.className = 'profile-header__suffix';
-  suffix.textContent = chrome.i18n.getMessage('thisProfileSuffix');
-
   const editBtn = document.createElement('button');
   editBtn.type = 'button';
   editBtn.className = 'profile-header__edit-btn';
@@ -162,10 +247,20 @@ function renderProfileHeader(profiles) {
   `;
   editBtn.addEventListener('click', () => enterLabelEditMode(label));
 
-  header.appendChild(icon);
-  header.appendChild(text);
-  header.appendChild(suffix);
-  header.appendChild(editBtn);
+  nameGroup.appendChild(icon);
+  nameGroup.appendChild(text);
+  nameGroup.appendChild(editBtn);
+  header.appendChild(nameGroup);
+
+  if (hasAnyTabs(profiles)) {
+    header.appendChild(
+      makeBulkControls(
+        { kind: 'own' },
+        chrome.i18n.getMessage('muteAllThisProfile'),
+        chrome.i18n.getMessage('unmuteAllThisProfile')
+      )
+    );
+  }
 }
 
 function makeProfileHeaderIcon() {
@@ -242,27 +337,156 @@ function enterLabelEditMode(currentLabel) {
   input.select();
 }
 
+// ------------------------------------------------------------- bulk controls
+
+function renderGlobalBulk(profiles) {
+  const container = document.getElementById('global-bulk');
+  container.innerHTML = '';
+
+  // With only this profile making noise, the header's own pair already is the
+  // global pair — a second identical one would just be noise.
+  const othersHaveTabs = getOtherProfiles(profiles).some((p) => p.tabs && p.tabs.length > 0);
+  if (!othersHaveTabs) {
+    container.classList.add('hidden');
+    return;
+  }
+  container.classList.remove('hidden');
+
+  const label = document.createElement('span');
+  label.className = 'bulk-controls__label';
+  label.textContent = chrome.i18n.getMessage('allProfilesLabel');
+  container.appendChild(label);
+
+  appendBulkButtons(
+    container,
+    { kind: 'global' },
+    chrome.i18n.getMessage('muteAllEverywhere'),
+    chrome.i18n.getMessage('unmuteAllEverywhere')
+  );
+}
+
+function appendBulkButtons(container, scope, muteTitle, unmuteTitle) {
+  container.appendChild(makeBulkButton(scope, true, muteTitle));
+  container.appendChild(makeBulkButton(scope, false, unmuteTitle));
+}
+
+function makeBulkButton(scope, muted, title) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'bulk-btn ' + (muted ? 'bulk-btn--mute' : 'bulk-btn--unmute');
+  btn.setAttribute('aria-label', title);
+  btn.title = title;
+  btn.innerHTML = muted ? ICON_SPEAKER_MUTED : ICON_SPEAKER;
+  btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await runBulkMute(scope, muted);
+  });
+  return btn;
+}
+
+function makeBulkControls(scope, muteTitle, unmuteTitle) {
+  const wrap = document.createElement('span');
+  wrap.className = 'bulk-controls';
+  appendBulkButtons(wrap, scope, muteTitle, unmuteTitle);
+  return wrap;
+}
+
+function makeGroupHeader(variant, text, scope, muteTitle, unmuteTitle) {
+  const row = document.createElement('div');
+  row.className = 'group-header group-header--' + variant;
+  const label = document.createElement('span');
+  label.className = 'group-header__label';
+  label.textContent = text;
+  row.appendChild(label);
+  row.appendChild(makeBulkControls(scope, muteTitle, unmuteTitle));
+  return row;
+}
+
+async function runBulkMute(scope, muted) {
+  let result;
+  try {
+    result = await applyBulkMute(scope, muted, _profiles);
+  } catch (e) {
+    showToast(chrome.i18n.getMessage('actionFailedToast'));
+    return;
+  }
+  if (result.ownTargets === 0 && result.remoteRequested === 0) {
+    showToast(chrome.i18n.getMessage(muted ? 'nothingToMuteToast' : 'nothingToUnmuteToast'));
+    return;
+  }
+  if (result.remoteRequested > result.remoteSent) {
+    showToast(chrome.i18n.getMessage('actionFailedToast'));
+  }
+  await refreshAfter(result.remoteSent > 0);
+}
+
+async function refreshAfter(hadRemoteAction) {
+  if (hadRemoteAction) {
+    await new Promise((resolve) => setTimeout(resolve, REMOTE_ACTION_SETTLE_MS));
+  }
+  await loadAndRender();
+}
+
+// --------------------------------------------------------------- tab listing
+
 function renderOwnProfileTabs(profiles) {
-  const list = document.getElementById('own-tabs-list');
+  const groups = document.getElementById('own-groups');
   const empty = document.getElementById('own-empty');
-  list.innerHTML = '';
+  groups.innerHTML = '';
+
   const own = getOwnProfile(profiles);
   const tabs = (own && own.tabs) || [];
 
   if (tabs.length === 0) {
-    list.classList.add('hidden');
-    const others = getOtherProfiles(profiles);
-    const anyOtherHasTabs = others.some((p) => p.tabs && p.tabs.length > 0);
-    if (anyOtherHasTabs) empty.classList.remove('hidden');
-    else empty.classList.add('hidden');
+    const anyOtherHasTabs = getOtherProfiles(profiles).some((p) => p.tabs && p.tabs.length > 0);
+    empty.classList.toggle('hidden', !anyOtherHasTabs);
+    return;
+  }
+  empty.classList.add('hidden');
+
+  // Only split by window when there is genuinely more than one to talk about,
+  // and the window the popup opened from is one of them. Otherwise the global
+  // control already covers every tab and the extra headers are noise.
+  const windowIds = new Set(tabs.map((t) => t.window_id));
+  const splitByWindow =
+    windowIds.size > 1 && _currentWindowId !== null && windowIds.has(_currentWindowId);
+
+  if (!splitByWindow) {
+    groups.appendChild(makeTabList(tabs, true, null));
     return;
   }
 
-  empty.classList.add('hidden');
-  list.classList.remove('hidden');
+  groups.appendChild(
+    makeGroupHeader(
+      'window',
+      chrome.i18n.getMessage('thisWindowHeader'),
+      { kind: 'window', windowId: _currentWindowId },
+      chrome.i18n.getMessage('muteAllThisWindow'),
+      chrome.i18n.getMessage('unmuteAllThisWindow')
+    )
+  );
+  groups.appendChild(makeTabList(tabs.filter((t) => t.window_id === _currentWindowId), true, null));
+
+  groups.appendChild(
+    makeGroupHeader(
+      'window',
+      chrome.i18n.getMessage('otherWindowsHeader'),
+      { kind: 'other-windows', excludeWindowId: _currentWindowId },
+      chrome.i18n.getMessage('muteAllOtherWindows'),
+      chrome.i18n.getMessage('unmuteAllOtherWindows')
+    )
+  );
+  groups.appendChild(makeTabList(tabs.filter((t) => t.window_id !== _currentWindowId), true, null));
+}
+
+function makeTabList(tabs, isOwnProfile, ownerProfileUuid) {
+  const list = document.createElement('div');
+  list.className = 'tab-list';
+  list.setAttribute('role', 'list');
   tabs.forEach((tab) => {
-    list.appendChild(createTabElement(tab, /*isOwnProfile*/ true, /*ownerProfileUuid*/ null));
+    list.appendChild(createTabElement(tab, isOwnProfile, ownerProfileUuid));
   });
+  return list;
 }
 
 function renderOtherProfiles(profiles) {
@@ -277,33 +501,32 @@ function renderOtherProfiles(profiles) {
   }
   section.classList.remove('hidden');
   others.forEach((p) => {
-    const heading = document.createElement('div');
-    heading.className = 'other-profile-heading';
-    heading.textContent = p.label || chrome.i18n.getMessage('profileLabelEmpty');
-    list.appendChild(heading);
-    p.tabs.forEach((tab) => {
-      list.appendChild(createTabElement(tab, /*isOwnProfile*/ false, /*ownerProfileUuid*/ p.profile_uuid));
-    });
+    const label = p.label || chrome.i18n.getMessage('profileLabelEmpty');
+    list.appendChild(
+      makeGroupHeader(
+        'profile',
+        label,
+        { kind: 'profile', profileUuid: p.profile_uuid },
+        chrome.i18n.getMessage('muteAllInProfile', [label]),
+        chrome.i18n.getMessage('unmuteAllInProfile', [label])
+      )
+    );
+    list.appendChild(makeTabList(p.tabs, false, p.profile_uuid));
   });
 }
 
 function renderEmptyState(profiles) {
-  const empty = document.getElementById('empty-state');
-  const own = getOwnProfile(profiles);
-  const others = getOtherProfiles(profiles);
-  const ownHasTabs = own && own.tabs && own.tabs.length > 0;
-  const othersHaveTabs = others.some((p) => p.tabs && p.tabs.length > 0);
-  if (!ownHasTabs && !othersHaveTabs) {
-    empty.classList.remove('hidden');
-  } else {
-    empty.classList.add('hidden');
-  }
+  document.getElementById('empty-state').classList.toggle('hidden', hasAnyTabs(profiles));
 }
 
 function createTabElement(tab, isOwnProfile, ownerProfileUuid) {
+  const entry = document.createElement('div');
+  entry.className = 'tab-entry';
+  entry.setAttribute('role', 'listitem');
+
   const item = document.createElement('div');
-  item.className = 'tab-item' + (isOwnProfile ? '' : ' tab-item--cross');
-  item.setAttribute('role', 'listitem');
+  item.className =
+    'tab-item' + (isOwnProfile ? '' : ' tab-item--cross') + (tab.paused ? ' tab-item--paused' : '');
   item.tabIndex = 0;
   item.setAttribute('data-tab-id', tab.tab_id);
   if (!isOwnProfile && ownerProfileUuid) {
@@ -312,15 +535,19 @@ function createTabElement(tab, isOwnProfile, ownerProfileUuid) {
 
   const favicon = document.createElement('img');
   favicon.className = 'tab-favicon';
-  favicon.src = tab.favicon_url || 'icons/icon16.png';
+  // The 48 is the tiled artwork; scaled into the 20px favicon slot it reads as
+  // a site icon, which the bare toolbar glyph does not.
+  favicon.src = tab.favicon_url || 'icons/icon48.png';
   favicon.alt = '';
   favicon.setAttribute('aria-hidden', 'true');
-  favicon.onerror = () => { favicon.src = 'icons/icon16.png'; };
+  favicon.onerror = () => { favicon.src = 'icons/icon48.png'; };
 
   const audioIndicator = document.createElement('div');
-  audioIndicator.className = 'audio-indicator' + (tab.muted ? ' muted' : '');
+  audioIndicator.className = 'audio-indicator' + (tab.muted || tab.paused ? ' muted' : '');
   audioIndicator.setAttribute('aria-hidden', 'true');
-  audioIndicator.innerHTML = `
+  audioIndicator.innerHTML = tab.paused
+    ? ICON_PAUSE
+    : `
     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
       <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
     </svg>
@@ -334,72 +561,181 @@ function createTabElement(tab, isOwnProfile, ownerProfileUuid) {
   title.title = tab.title || '';
   const url = document.createElement('div');
   url.className = 'tab-url';
-  url.textContent = formatUrl(tab.url);
+  url.textContent = tab.paused
+    ? chrome.i18n.getMessage('pausedLabel') + ' · ' + formatUrl(tab.url)
+    : formatUrl(tab.url);
   url.title = tab.url || '';
   info.appendChild(title);
   info.appendChild(url);
 
-  const muteBtn = createMuteButton(tab, isOwnProfile, ownerProfileUuid, item, audioIndicator);
-  const closeBtn = createCloseButton(tab, isOwnProfile, ownerProfileUuid, item);
-
   item.appendChild(favicon);
   item.appendChild(audioIndicator);
   item.appendChild(info);
-  item.appendChild(muteBtn);
-  item.appendChild(closeBtn);
+
+  // A paused tab has nothing to mute and nothing to solo. Resuming is the one
+  // thing you want from it, so it gets the row to itself.
+  if (tab.paused) {
+    item.appendChild(createResumeButton(tab));
+  } else {
+    item.appendChild(createVolumeButton(tab, entry, isOwnProfile, ownerProfileUuid));
+    item.appendChild(createMuteButton(tab, isOwnProfile, ownerProfileUuid, audioIndicator));
+    // "Mute all other tabs" lives in the panel, where it can carry a text label
+    // — no 16px icon says "silence everything except this". The keyboard
+    // shortcut still reaches it, hence the handle on the element.
+    item._solo = () => runSolo(tab, isOwnProfile, ownerProfileUuid);
+  }
+  item.appendChild(createCloseButton(tab, isOwnProfile, ownerProfileUuid, entry));
+
+  if (isOwnProfile) {
+    item._togglePause = () => (tab.paused ? runResume(tab) : runPause(tab));
+  }
 
   item.addEventListener('click', (e) => {
     if (e.target.closest('button')) return;
     activateTab(tab, isOwnProfile, ownerProfileUuid);
   });
 
-  return item;
+  entry.appendChild(item);
+  return entry;
 }
 
-function createMuteButton(tab, isOwnProfile, ownerProfileUuid, itemEl, audioIndicator) {
+function createMuteButton(tab, isOwnProfile, ownerProfileUuid, audioIndicator) {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'mute-btn';
-  btn.setAttribute('aria-label', tab.muted ? chrome.i18n.getMessage('unmuteTab') : chrome.i18n.getMessage('muteTab'));
-  btn.title = btn.getAttribute('aria-label');
-  setMuteIcon(btn, tab.muted);
+  applyMuteButtonState(btn, tab.muted);
 
   btn.addEventListener('click', async (e) => {
     e.stopPropagation();
     const newMuted = !tab.muted;
-    setMuteIcon(btn, newMuted);
-    if (newMuted) audioIndicator.classList.add('muted');
-    else audioIndicator.classList.remove('muted');
-    btn.setAttribute('aria-label', newMuted ? chrome.i18n.getMessage('unmuteTab') : chrome.i18n.getMessage('muteTab'));
-    btn.title = btn.getAttribute('aria-label');
+    applyMuteButtonState(btn, newMuted);
+    audioIndicator.classList.toggle('muted', newMuted);
     tab.muted = newMuted;
 
     try {
-      if (isOwnProfile) {
-        await chrome.tabs.update(tab.tab_id, { muted: newMuted });
-      } else {
-        const resp = await chrome.runtime.sendMessage({
-          type: 'send_action',
-          target_profile_uuid: ownerProfileUuid,
-          action: newMuted ? 'mute' : 'unmute',
-          target_tab_id: tab.tab_id,
-          target_window_id: tab.window_id,
-        });
-        if (!resp || !resp.ok) throw new Error((resp && resp.error) || 'send_action failed');
-      }
+      await setTabMuted(tab, isOwnProfile, ownerProfileUuid, newMuted);
     } catch (err) {
       tab.muted = !newMuted;
-      setMuteIcon(btn, tab.muted);
-      if (tab.muted) audioIndicator.classList.add('muted');
-      else audioIndicator.classList.remove('muted');
-      btn.setAttribute('aria-label', tab.muted ? chrome.i18n.getMessage('unmuteTab') : chrome.i18n.getMessage('muteTab'));
+      applyMuteButtonState(btn, tab.muted);
+      audioIndicator.classList.toggle('muted', tab.muted);
       showToast(chrome.i18n.getMessage('actionFailedToast'));
     }
   });
   return btn;
 }
 
-function createCloseButton(tab, isOwnProfile, ownerProfileUuid, itemEl) {
+function applyMuteButtonState(btn, isMuted) {
+  const label = chrome.i18n.getMessage(isMuted ? 'unmuteTab' : 'muteTab');
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
+  btn.innerHTML = isMuted ? ICON_SPEAKER_MUTED : ICON_SPEAKER;
+}
+
+async function runSolo(tab, isOwnProfile, ownerProfileUuid) {
+  let result;
+  try {
+    result = await applySolo(tab, isOwnProfile, ownerProfileUuid, _profiles);
+  } catch (err) {
+    showToast(chrome.i18n.getMessage('actionFailedToast'));
+    return;
+  }
+  await refreshAfter(result.remoteSent > 0 || !isOwnProfile);
+}
+
+async function runPause(tab) {
+  if (!(await hasMediaPermission())) {
+    showToast(chrome.i18n.getMessage('pauseNeedsPermission'));
+    return;
+  }
+  try {
+    const changed = await setTabPaused(tab.tab_id, true);
+    if (changed === 0) {
+      showToast(chrome.i18n.getMessage('nothingToPauseToast'));
+      return;
+    }
+    await addPausedTabId(tab.tab_id);
+  } catch (e) {
+    showToast(chrome.i18n.getMessage('volumeUnavailable'));
+    return;
+  }
+  await loadAndRender();
+}
+
+async function runResume(tab) {
+  try {
+    await setTabPaused(tab.tab_id, false);
+  } catch (e) {
+    showToast(chrome.i18n.getMessage('resumeFailedToast'));
+  }
+  // Drop it from the paused set either way — leaving a tab we can no longer
+  // drive stuck in the list would be worse than losing track of it.
+  await removePausedTabId(tab.tab_id);
+  // `audible` needs a moment to come back; re-rendering immediately would blink
+  // the row out of the list until the next open.
+  await refreshAfter(true);
+}
+
+function createResumeButton(tab) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'resume-btn';
+  btn.setAttribute('aria-label', chrome.i18n.getMessage('resumeTab'));
+  btn.title = chrome.i18n.getMessage('resumeTab');
+  btn.innerHTML = ICON_PLAY;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    runResume(tab);
+  });
+  return btn;
+}
+
+function buildPauseButton(tab) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'volume-panel__action';
+  btn.title = chrome.i18n.getMessage('pauseTabHint');
+
+  const icon = document.createElement('span');
+  icon.className = 'volume-panel__action-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = ICON_PAUSE;
+
+  const label = document.createElement('span');
+  label.textContent = chrome.i18n.getMessage('pauseTab');
+
+  btn.appendChild(icon);
+  btn.appendChild(label);
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    runPause(tab);
+  });
+  return btn;
+}
+
+function buildSoloButton(tab, isOwnProfile, ownerProfileUuid) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'volume-panel__action';
+  btn.title = chrome.i18n.getMessage('muteOthersHint');
+
+  const icon = document.createElement('span');
+  icon.className = 'volume-panel__action-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = ICON_SPEAKER_MUTED;
+
+  const label = document.createElement('span');
+  label.textContent = chrome.i18n.getMessage('muteOthers');
+
+  btn.appendChild(icon);
+  btn.appendChild(label);
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    runSolo(tab, isOwnProfile, ownerProfileUuid);
+  });
+  return btn;
+}
+
+function createCloseButton(tab, isOwnProfile, ownerProfileUuid, entryEl) {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'close-btn';
@@ -413,22 +749,13 @@ function createCloseButton(tab, isOwnProfile, ownerProfileUuid, itemEl) {
   `;
   btn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    const next = itemEl.nextElementSibling || itemEl.previousElementSibling;
-    itemEl.remove();
-    if (next && next.classList.contains('tab-item')) next.focus();
+    const neighbour = entryEl.nextElementSibling || entryEl.previousElementSibling;
+    entryEl.remove();
+    const nextItem = neighbour && neighbour.querySelector ? neighbour.querySelector('.tab-item') : null;
+    if (nextItem) nextItem.focus();
+    if (tab.paused) await removePausedTabId(tab.tab_id);
     try {
-      if (isOwnProfile) {
-        await chrome.tabs.remove(tab.tab_id);
-      } else {
-        const resp = await chrome.runtime.sendMessage({
-          type: 'send_action',
-          target_profile_uuid: ownerProfileUuid,
-          action: 'close',
-          target_tab_id: tab.tab_id,
-          target_window_id: tab.window_id,
-        });
-        if (!resp || !resp.ok) throw new Error((resp && resp.error) || 'send_action failed');
-      }
+      await removeTab(tab, isOwnProfile, ownerProfileUuid);
     } catch (err) {
       showToast(chrome.i18n.getMessage('actionFailedToast'));
     }
@@ -436,42 +763,201 @@ function createCloseButton(tab, isOwnProfile, ownerProfileUuid, itemEl) {
   return btn;
 }
 
-function setMuteIcon(btn, isMuted) {
-  if (isMuted) {
-    btn.innerHTML = `
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
-      </svg>
-    `;
-  } else {
-    btn.innerHTML = `
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-      </svg>
-    `;
-  }
-}
-
 async function activateTab(tab, isOwnProfile, ownerProfileUuid) {
   try {
-    if (isOwnProfile) {
-      await chrome.tabs.update(tab.tab_id, { active: true });
-      await chrome.windows.update(tab.window_id, { focused: true });
-    } else {
-      const resp = await chrome.runtime.sendMessage({
-        type: 'send_action',
-        target_profile_uuid: ownerProfileUuid,
-        action: 'activate',
-        target_tab_id: tab.tab_id,
-        target_window_id: tab.window_id,
-      });
-      if (!resp || !resp.ok) throw new Error((resp && resp.error) || 'send_action failed');
-    }
+    await focusTab(tab, isOwnProfile, ownerProfileUuid);
     window.close();
   } catch (e) {
     showToast(chrome.i18n.getMessage('actionFailedToast'));
   }
 }
+
+// -------------------------------------------------------------- volume panel
+
+function createVolumeButton(tab, entryEl, isOwnProfile, ownerProfileUuid) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'volume-btn';
+  btn.setAttribute('aria-label', chrome.i18n.getMessage('rowControlsLabel'));
+  btn.title = chrome.i18n.getMessage('rowControlsLabel');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.innerHTML = ICON_TUNE;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleVolumePanel(tab, entryEl, btn, isOwnProfile, ownerProfileUuid);
+  });
+  return btn;
+}
+
+async function toggleVolumePanel(tab, entryEl, btn, isOwnProfile, ownerProfileUuid) {
+  const existing = entryEl.querySelector('.volume-panel');
+  if (existing) {
+    existing.remove();
+    btn.setAttribute('aria-expanded', 'false');
+    btn.classList.remove('volume-btn--active');
+    return;
+  }
+  const panel = document.createElement('div');
+  panel.className = 'volume-panel';
+  entryEl.appendChild(panel);
+  btn.setAttribute('aria-expanded', 'true');
+  btn.classList.add('volume-btn--active');
+  await populateVolumePanel(tab, panel, isOwnProfile, ownerProfileUuid);
+}
+
+async function populateVolumePanel(tab, panel, isOwnProfile, ownerProfileUuid) {
+  panel.innerHTML = '';
+  panel.removeAttribute('title');
+  if (isOwnProfile) {
+    await populateOwnVolumePanel(tab, panel);
+  } else {
+    await populateRemoteVolumePanel(tab, panel, ownerProfileUuid);
+  }
+  // Pausing reaches into the page like volume does, so it is only offered for
+  // this profile's tabs. Solo needs neither permission nor scripting, so it is
+  // always here, below whatever the volume half turned out to be.
+  if (isOwnProfile) {
+    panel.appendChild(buildPauseButton(tab));
+  }
+  panel.appendChild(buildSoloButton(tab, isOwnProfile, ownerProfileUuid));
+}
+
+async function populateOwnVolumePanel(tab, panel) {
+  if (!(await hasMediaPermission())) {
+    panel.appendChild(buildVolumePermissionNotice(tab, panel));
+    return;
+  }
+
+  let level = null;
+  let scriptable = true;
+  try {
+    level = await readTabVolume(tab.tab_id);
+  } catch (e) {
+    scriptable = false;
+  }
+  const available = scriptable && level !== null;
+
+  const row = buildVolumeRow(level === null ? 100 : Math.round(level * 100), !available);
+  if (available) {
+    wireVolumeSlider(row, (percent) => writeTabVolume(tab.tab_id, percent / 100));
+  } else {
+    panel.title = chrome.i18n.getMessage('volumeUnavailable');
+  }
+  panel.appendChild(row.el);
+}
+
+/*
+ * Another profile's tab. We can send a level but not read one back: the real
+ * value would have to travel in the state file, and the host's Go structs are
+ * fixed, so that would mean a helper reinstall for every user. The slider
+ * therefore shows the last level THIS profile set (session-scoped) and the
+ * panel says out loud what it depends on, because a target profile that never
+ * enabled volume control fails without any signal reaching us.
+ */
+async function populateRemoteVolumePanel(tab, panel, ownerProfileUuid) {
+  const remembered = await getRememberedRemoteVolume(ownerProfileUuid, tab.tab_id);
+  const row = buildVolumeRow(remembered === null ? 100 : remembered, false);
+  wireVolumeSlider(row, async (percent) => {
+    await setRemoteTabVolume(tab, ownerProfileUuid, percent);
+    await rememberRemoteVolume(ownerProfileUuid, tab.tab_id, percent);
+  });
+  panel.appendChild(row.el);
+
+  const note = document.createElement('p');
+  note.className = 'volume-panel__note';
+  note.textContent = chrome.i18n.getMessage('volumeRemoteNote', [profileLabelFor(ownerProfileUuid)]);
+  panel.appendChild(note);
+}
+
+function buildVolumeRow(percent, disabled) {
+  const el = document.createElement('div');
+  el.className = 'volume-panel__row';
+
+  const icon = document.createElement('span');
+  icon.className = 'volume-panel__icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = ICON_SPEAKER;
+
+  const slider = document.createElement('input');
+  slider.type = 'range';
+  slider.className = 'volume-panel__slider';
+  slider.min = '0';
+  slider.max = '100';
+  slider.step = '1';
+  slider.value = String(percent);
+  slider.disabled = disabled;
+  slider.setAttribute('aria-label', chrome.i18n.getMessage('volumeAria'));
+
+  const value = document.createElement('span');
+  value.className = 'volume-panel__value';
+  value.textContent = disabled ? '—' : percent + '%';
+
+  el.appendChild(icon);
+  el.appendChild(slider);
+  el.appendChild(value);
+  return { el, slider, value };
+}
+
+function wireVolumeSlider(row, apply) {
+  let pending = null;
+  row.slider.addEventListener('input', () => {
+    row.value.textContent = row.slider.value + '%';
+    if (pending) clearTimeout(pending);
+    pending = setTimeout(async () => {
+      try {
+        await apply(Number(row.slider.value));
+      } catch (e) {
+        showToast(chrome.i18n.getMessage('actionFailedToast'));
+      }
+    }, VOLUME_DEBOUNCE_MS);
+  });
+}
+
+function profileLabelFor(profileUuid) {
+  const profile = _profiles.find((p) => p.profile_uuid === profileUuid);
+  return (profile && profile.label) || chrome.i18n.getMessage('profileLabelEmpty');
+}
+
+function buildVolumePermissionNotice(tab, panel) {
+  const wrap = document.createElement('div');
+  wrap.className = 'volume-panel__notice';
+
+  const note = document.createElement('p');
+  note.textContent = chrome.i18n.getMessage('volumePermissionBody');
+
+  const grant = document.createElement('button');
+  grant.type = 'button';
+  grant.className = 'volume-panel__grant';
+  grant.textContent = chrome.i18n.getMessage('volumePermissionButton');
+  grant.addEventListener('click', () => {
+    // chrome.permissions.request must run inside the user gesture, so nothing
+    // may be awaited before it. Chrome usually closes the popup to show the
+    // prompt, so leave a note (fire-and-forget) that lands the next open back
+    // on this row.
+    rememberOpenVolumePanel(tab.tab_id);
+    requestMediaPermission().then(async (granted) => {
+      await forgetOpenVolumePanel();
+      if (granted) await populateVolumePanel(tab, panel, true, null);
+    });
+  });
+
+  wrap.appendChild(note);
+  wrap.appendChild(grant);
+  return wrap;
+}
+
+async function restorePendingVolumePanel() {
+  const tabId = await takeOpenVolumePanel();
+  if (tabId === null) return;
+  const item = document.querySelector(`.tab-item[data-tab-id="${CSS.escape(String(tabId))}"]`);
+  const btn = item && item.querySelector('.volume-btn');
+  if (btn) {
+    btn.click();
+    item.focus();
+  }
+}
+
+// -------------------------------------------------------------------- shared
 
 function formatUrl(url) {
   try {
@@ -493,9 +979,30 @@ function setupKeyboardNavigation() {
     if (e.target.matches('input, textarea')) return;
 
     const items = Array.from(document.querySelectorAll('.tab-item'));
-    if (items.length === 0) return;
+    const focused = items.findIndex(
+      (el) => el.contains(document.activeElement) || el === document.activeElement
+    );
 
-    const focused = items.findIndex((el) => el.contains(document.activeElement) || el === document.activeElement);
+    switch (e.key) {
+      case 'M':
+      case 'm':
+        if (e.shiftKey) {
+          e.preventDefault();
+          runBulkMute({ kind: 'global' }, true);
+        } else {
+          clickInRow(items, focused, '.mute-btn');
+        }
+        return;
+      case 'U':
+      case 'u':
+        if (e.shiftKey) {
+          e.preventDefault();
+          runBulkMute({ kind: 'global' }, false);
+        }
+        return;
+    }
+
+    if (items.length === 0) return;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -522,21 +1029,39 @@ function setupKeyboardNavigation() {
           items[focused].click();
         }
         break;
-      case 'm':
-      case 'M':
-        if (focused !== -1) {
-          const muteBtn = items[focused].querySelector('.mute-btn');
-          if (muteBtn) muteBtn.click();
+      case 's':
+      case 'S':
+        if (focused !== -1 && items[focused]._solo) {
+          e.preventDefault();
+          items[focused]._solo();
+        }
+        break;
+      case 'v':
+      case 'V':
+        if (clickInRow(items, focused, '.volume-btn')) e.preventDefault();
+        break;
+      case 'p':
+      case 'P':
+        if (focused !== -1 && items[focused]._togglePause) {
+          e.preventDefault();
+          items[focused]._togglePause();
         }
         break;
       case 'Delete':
       case 'Backspace':
         if (focused !== -1) {
           e.preventDefault();
-          const closeBtn = items[focused].querySelector('.close-btn');
-          if (closeBtn) closeBtn.click();
+          clickInRow(items, focused, '.close-btn');
         }
         break;
     }
   });
+}
+
+function clickInRow(items, focused, selector) {
+  if (focused === -1) return false;
+  const btn = items[focused].querySelector(selector);
+  if (!btn) return false;
+  btn.click();
+  return true;
 }

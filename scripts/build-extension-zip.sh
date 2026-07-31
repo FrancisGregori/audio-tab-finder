@@ -22,11 +22,13 @@ zip -r "${OUTPUT}" . \
   -x 'scripts/*' \
   -x 'packaging/*' \
   -x 'docs/*' \
+  -x 'promo/*' \
   -x '.github/*' \
   -x '.git/*' \
   -x '.claude/*' \
   -x '.idea/*' \
   -x 'dist/*' \
+  -x 'Archive/*' \
   -x '*.zip' \
   -x 'BUILDING.md' \
   -x 'STORE_LISTING.md' \
